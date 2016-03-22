@@ -1,0 +1,180 @@
+#####################################################################
+#####################################################################
+# Parameters file for the CKDgen Phenotype Preparation script
+#####################################################################
+#####################################################################
+
+# Name of your study
+STUDY_NAME="GCKD"
+
+#####################################################################
+### INPUT AND OUTPUT FILES
+#####################################################################
+
+# Name (and path) of the phenotype input file
+# Please replace with your file name.
+INPUT_FILE="XXXX"
+
+# Specify input file delimiter
+# Possible values: COMMA, SEMICOLON, WHITESPACE, TAB, AUTO
+# "AUTO" tries to detect the correct value.
+INPUT_FILE_DELIMITER="AUTO"
+
+# Name (and path) of the log file
+# %TIMESTAMP% is replaced by a timestamp
+# %STUDYNAME% is replaced by the study name
+LOG_FILE="ckdgen-pheno-%STUDY%_%TIMESTAMP%.log"
+
+# Name (and path) of the error file
+# Format is CSV, columns: severity, line number, message
+# %TIMESTAMP% is replaced by a timestamp
+# %STUDYNAME% is replaced by the study name
+LOG_FILE="ckdgen-pheno-%STUDY%_%TIMESTAMP%.errors.csv"
+
+# Name (and path) of the output file
+# Output format is CSV.
+# %TIMESTAMP% is replaced by a timestamp
+# %STUDYNAME% is replaced by the study name
+OUTPUT_FILE="ckdgen-pheno-%STUDYNAME%-%TIMESTAMP%.csv"
+
+# Name (and path) of the summary statistics output files
+# Output format is TXT and PDF.
+SUMMARY_OUTPUT_FILE_TXT="ckdgen-pheno-%STUDYNAME%-%TIMESTAMP%.summary.txt"
+SUMMARY_OUTPUT_FILE_PDF="ckdgen-pheno-%STUDYNAME%-%TIMESTAMP%.summary.pdf"
+
+
+#####################################################################
+### COLUMN NAMES
+#####################################################################
+# Please adjust the names to fit important columns in your input file
+
+###------------------------------------------------------------------
+### PATIENT DEMOGRAPHICS
+###------------------------------------------------------------------
+
+# Patient age (years)
+COLUMN_AGE="age"
+
+# Patient sex (1 = male, 2 = female, 0 = unknown)
+COLUMN_SEX="sex"
+
+# Race (0 = European American, 1 = African American, 2 = Asian, 3 = Hispanic)
+COLUMN_RACE="race"
+
+###------------------------------------------------------------------
+### LAB VALUES
+###------------------------------------------------------------------
+
+# Serum creatinine (unit: see below)
+COLUMN_CREATININE_SERUM="screa"
+
+# Urinary creatinine (unit: see below)
+COLUMN_CREATININE_URINARY="ucrea"
+
+# Serum albumin (unit: see below)
+COLUMN_ALBUMIN_SERUM="salb"
+
+# Urinary albumin (unit: see below)
+COLUMN_ALBUMIN_URINARY="ualb"
+
+# UACR (Urinary albumin-creatinine ratio)
+# Unit: see below
+# Optional, will be calculated if no column name given
+COLUMN_UACR=""
+
+# Serum BUN (blood urea nitrogen)
+# Unit: mg/dl
+# Optional, Urea column is used if this column name is empty
+COLUMN_BUN_SERUM=""
+
+# Serum urea
+# Unit: mg/dl
+# Optional, BUN column is used if this column name is empty
+COLUMN_UREA_SERUM="urea"
+
+# Serum urate (unit: see below)
+COLUMN_URATE_SERUM="urate"
+
+###------------------------------------------------------------------
+### KIDNEY FUNCTION MEASUREMENTS
+###------------------------------------------------------------------
+
+# eGFR / estimated glomerular filtration rate
+# QUESTION: we will generate these variables, no need to take from input file
+COLUMN_EGFR_CKDEPI="egfr_ckdepi"
+COLUMN_EGFR_CYSTC="egfr_cystc"
+
+###------------------------------------------------------------------
+### DIAGNOSES
+###------------------------------------------------------------------
+
+# CKD / Chronic Kidney Disease (0 = unknown, 1 = no CKD, 2 = CKD)
+# QUESTION: will we generate this variable? then, no need to take it from input file
+COLUMN_CKD="ckd"
+
+# HTN / Hypertension (0 = unknown, 1 = no HTN, 2 = HTN)
+COLUMN_HYPERTENSION="htn"
+
+# DM / Diabetes mellitus (0 = unknown, 1 = no DM, 2 = DM)
+COLUMN_DIABETES="diabetes"
+
+# Dipstick proteinuria (0 = unknown, 1 = no, 2 = yes)
+COLUMN_DIPSTICK_PROTEINURIA="dipstick"
+
+# Gout (0 = unknown, 1 = no, 2 = yes)
+COLUMN_GOUT="gout"
+
+###------------------------------------------------------------------
+### EGFR DECLINE PHENOTYPES
+###------------------------------------------------------------------
+
+# QUESTION: Have columns for all of these phenotypes in the input file?
+# Or should we rather have another file with time series data?
+COLUMN_EGFR_DECLINE_OVERALL=""
+COLUMN_EGFR_DECLINE_CKD=""
+COLUMN_EGFR_DECLINE_NO_CKD=""
+COLUMN_EGFR_DECLINE_DM=""
+COLUMN_EGFR_DECLINE_NO_DM=""
+COLUMN_RAPID3_OVERALL=""
+COLUMN_RAPID3_NO_DM=""
+COLUMN_RAPID3_DM=""
+COLUMN_CKDI=""
+COLUMN_CKDI25=""
+
+
+#####################################################################
+### STUDY PARAMETERS
+#####################################################################
+
+# Jaffe assay for creatinine measurement in blood
+# 1 if Jaffe assay used for measurement of creatinine in blood, else 0
+JAFFE_BLOOD="0"
+
+# 1 if Jaffe assay was used prior to 2009, else 0
+# TODO: set automatically?
+JAFFE_PRE_2009="0"
+
+# Unit of serum creatinine measurements
+# 0 = umol/l, 1 = mg/dl
+CREATININE_SERUM_UNIT="1"
+
+# Unit of urinary creatinine measurements
+# 0 = umol/l, 1 = mg/dl
+CREATININE_URINARY_UNIT="1"
+
+# Unit of urinary albumin measurements
+# QUESTION: coding?
+ALBUMIN_URINARY_UNIT="0"
+
+# Unit of values in the UACR column (if present)
+# 0 = mg/mmol, 1 = mg/g
+UACR_UNIT="1"
+
+# Unit of urate measurements
+# 0 = umol/l, 1 = mg/dl
+URATE_UNIT="1"
+
+# LOD (limit of detection) of urinary albumin assay
+# Unit: see ALBUMIN_URINARY_UNIT
+# QUESTION: mandatory?
+LOD_URINARY_ALBUMIN=""

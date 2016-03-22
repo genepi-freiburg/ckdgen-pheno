@@ -1,0 +1,17 @@
+Usage instructions
+
+1. Rename the parameters file to reflect your study, e.g.
+	"mv params-template params-gckd"
+
+2. Edit the parameters file to reflect your input file.
+   The parameters file itself contains detailed instructions.
+
+3. Run the phenotype generation script, passing the parameters file, e.g.
+	"./ckdgen-pheno-prep.sh params-gckd"
+
+4. Output is written both to the screen and to a log file. Please examine
+   the output carefully. If there are problems, please try to fix the
+   parameters in the parameters file. If you need assistance, please do
+   not hesitate to contact us.
+
+
