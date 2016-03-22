@@ -7,6 +7,7 @@
 # Name of your study
 STUDY_NAME="GCKD"
 
+
 #####################################################################
 ### INPUT AND OUTPUT FILES
 #####################################################################
@@ -39,8 +40,8 @@ OUTPUT_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.out.csv"
 
 # Name (and path) of the summary statistics output files
 # Output format is TXT and PDF.
-SUMMARY_OUTPUT_FILE_TXT="ckdgen-pheno-%STUDYNAME%-%TIMESTAMP%.summary.txt"
-SUMMARY_OUTPUT_FILE_PDF="ckdgen-pheno-%STUDYNAME%-%TIMESTAMP%.summary.pdf"
+SUMMARY_OUTPUT_FILE_TXT="ckdgen-pheno-%STUDY%-%TIMESTAMP%.summary.txt"
+SUMMARY_OUTPUT_FILE_PDF="ckdgen-pheno-%STUDY%-%TIMESTAMP%.summary.pdf"
 
 
 #####################################################################
@@ -66,31 +67,29 @@ COLUMN_RACE="race"
 ### LAB VALUES
 ###------------------------------------------------------------------
 
-# Serum creatinine (unit: see below)
+# Serum creatinine (unit: must be configured below)
 COLUMN_CREATININE_SERUM="screa"
 
-# Urinary creatinine (unit: see below)
+# Urinary creatinine (unit: must be configured below)
 COLUMN_CREATININE_URINARY="ucrea"
 
-# Urinary albumin (unit: see below)
+# Urinary albumin (unit: mg/l)
 COLUMN_ALBUMIN_URINARY="ualb"
 
 # UACR (Urinary albumin-creatinine ratio)
-# Unit: see below
+# Unit: must be configured below
 # Optional, will be calculated if no column name given
 COLUMN_UACR=""
 
-# Serum BUN (blood urea nitrogen)
-# Unit: mg/dl
+# Serum BUN (blood urea nitrogen; unit: mg/dl)
 # Optional, Urea column is used if this column name is empty
 COLUMN_BUN_SERUM=""
 
-# Serum urea
-# Unit: mg/dl
+# Serum urea (unit: mg/dl)
 # Optional, BUN column is used if this column name is empty
 COLUMN_UREA_SERUM="urea"
 
-# Serum uric acid (unit: see below)
+# Serum uric acid (unit: must be configured below)
 COLUMN_URIC_ACID_SERUM="uric_acid"
 
 ###------------------------------------------------------------------
@@ -104,7 +103,7 @@ COLUMN_HYPERTENSION="htn"
 COLUMN_DIABETES="diabetes"
 
 # Large proteinuria (0 = no, 1 = yes, NA = unknown)
-# DISCUSS: Dipstick: ++/+++, or: UACR > 100 mg/g, or: UPCR > 300 mg/g
+# Dipstick: 1+, or: UACR > 30 mg/g, or: UPCR > 50 mg/g (??)
 COLUMN_LARGE_PROTEINURIA="large_prot"
 
 # Gout (0 = no, 1 = yes, NA = unknown)
@@ -114,15 +113,8 @@ COLUMN_GOUT="gout"
 ### EGFR DECLINE PHENOTYPES
 ###------------------------------------------------------------------
 
-# eGFR decline
-# DISCUSS: relative/absolute, unit etc.
-# DISCUSS: how to get serial creatinine measurements?
-# DISCUSS: separate script for longitudinal data?
-# (multiple columns, new file, ...)
-COLUMN_EGFR_DECLINE="egfr_decline"
-COLUMN_RAPID3="rapid3"
-COLUMN_CKDI="ckdi"
-COLUMN_CKDI25="ckdi25"
+# eGFR decline (absolute decline per year)
+# DISCUSS: separate script for longitudinal data? which columns to include?
 
 
 #####################################################################
@@ -143,11 +135,6 @@ CREATININE_SERUM_UNIT="1"
 # Unit of urinary creatinine measurements
 # 0 = umol/l, 1 = mg/dl
 CREATININE_URINARY_UNIT="1"
-
-# Unit of urinary albumin measurements
-# 0 = g/dl, 1 = mmol/l
-# TODO check
-ALBUMIN_URINARY_UNIT="0"
 
 # Unit of values in the UACR column (if present)
 # 0 = mg/mmol, 1 = mg/g
