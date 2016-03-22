@@ -23,19 +23,19 @@ INPUT_FILE_DELIMITER="AUTO"
 # Name (and path) of the log file
 # %TIMESTAMP% is replaced by a timestamp
 # %STUDYNAME% is replaced by the study name
-LOG_FILE="ckdgen-pheno-%STUDY%_%TIMESTAMP%.log"
+LOG_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.log"
 
 # Name (and path) of the error file
 # Format is CSV, columns: severity, line number, message
 # %TIMESTAMP% is replaced by a timestamp
 # %STUDYNAME% is replaced by the study name
-LOG_FILE="ckdgen-pheno-%STUDY%_%TIMESTAMP%.errors.csv"
+ERROR_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.errors.csv"
 
 # Name (and path) of the output file
 # Output format is CSV.
 # %TIMESTAMP% is replaced by a timestamp
 # %STUDYNAME% is replaced by the study name
-OUTPUT_FILE="ckdgen-pheno-%STUDYNAME%-%TIMESTAMP%.csv"
+OUTPUT_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.out.csv"
 
 # Name (and path) of the summary statistics output files
 # Output format is TXT and PDF.
@@ -55,10 +55,11 @@ SUMMARY_OUTPUT_FILE_PDF="ckdgen-pheno-%STUDYNAME%-%TIMESTAMP%.summary.pdf"
 # Patient age (years)
 COLUMN_AGE="age"
 
-# Patient sex (1 = male, 2 = female, 0 = unknown)
-COLUMN_SEX="sex"
+# Patient sex (1 = male, 0 = female)
+COLUMN_SEX_MALE="male"
 
 # Race (0 = European American, 1 = African American, 2 = Asian, 3 = Hispanic)
+# DISCUSS: COLUMN_BLACK, only 0/1
 COLUMN_RACE="race"
 
 ###------------------------------------------------------------------
@@ -70,9 +71,6 @@ COLUMN_CREATININE_SERUM="screa"
 
 # Urinary creatinine (unit: see below)
 COLUMN_CREATININE_URINARY="ucrea"
-
-# Serum albumin (unit: see below)
-COLUMN_ALBUMIN_SERUM="salb"
 
 # Urinary albumin (unit: see below)
 COLUMN_ALBUMIN_URINARY="ualb"
@@ -92,54 +90,39 @@ COLUMN_BUN_SERUM=""
 # Optional, BUN column is used if this column name is empty
 COLUMN_UREA_SERUM="urea"
 
-# Serum urate (unit: see below)
-COLUMN_URATE_SERUM="urate"
-
-###------------------------------------------------------------------
-### KIDNEY FUNCTION MEASUREMENTS
-###------------------------------------------------------------------
-
-# eGFR / estimated glomerular filtration rate
-# QUESTION: we will generate these variables, no need to take from input file
-COLUMN_EGFR_CKDEPI="egfr_ckdepi"
-COLUMN_EGFR_CYSTC="egfr_cystc"
+# Serum uric acid (unit: see below)
+COLUMN_URIC_ACID_SERUM="uric_acid"
 
 ###------------------------------------------------------------------
 ### DIAGNOSES
 ###------------------------------------------------------------------
 
-# CKD / Chronic Kidney Disease (0 = unknown, 1 = no CKD, 2 = CKD)
-# QUESTION: will we generate this variable? then, no need to take it from input file
-COLUMN_CKD="ckd"
-
-# HTN / Hypertension (0 = unknown, 1 = no HTN, 2 = HTN)
+# HTN / Hypertension (0 = no HTN, 1 = HTN, NA = unknown)
 COLUMN_HYPERTENSION="htn"
 
-# DM / Diabetes mellitus (0 = unknown, 1 = no DM, 2 = DM)
+# DM / Diabetes mellitus (0 = no DM, 1 = DM, NA = unknown)
 COLUMN_DIABETES="diabetes"
 
-# Dipstick proteinuria (0 = unknown, 1 = no, 2 = yes)
-COLUMN_DIPSTICK_PROTEINURIA="dipstick"
+# Large proteinuria (0 = no, 1 = yes, NA = unknown)
+# DISCUSS: Dipstick: ++/+++, or: UACR > 100 mg/g, or: UPCR > 300 mg/g
+COLUMN_LARGE_PROTEINURIA="large_prot"
 
-# Gout (0 = unknown, 1 = no, 2 = yes)
+# Gout (0 = no, 1 = yes, NA = unknown)
 COLUMN_GOUT="gout"
 
 ###------------------------------------------------------------------
 ### EGFR DECLINE PHENOTYPES
 ###------------------------------------------------------------------
 
-# QUESTION: Have columns for all of these phenotypes in the input file?
-# Or should we rather have another file with time series data?
-COLUMN_EGFR_DECLINE_OVERALL=""
-COLUMN_EGFR_DECLINE_CKD=""
-COLUMN_EGFR_DECLINE_NO_CKD=""
-COLUMN_EGFR_DECLINE_DM=""
-COLUMN_EGFR_DECLINE_NO_DM=""
-COLUMN_RAPID3_OVERALL=""
-COLUMN_RAPID3_NO_DM=""
-COLUMN_RAPID3_DM=""
-COLUMN_CKDI=""
-COLUMN_CKDI25=""
+# eGFR decline
+# DISCUSS: relative/absolute, unit etc.
+# DISCUSS: how to get serial creatinine measurements?
+# DISCUSS: separate script for longitudinal data?
+# (multiple columns, new file, ...)
+COLUMN_EGFR_DECLINE="egfr_decline"
+COLUMN_RAPID3="rapid3"
+COLUMN_CKDI="ckdi"
+COLUMN_CKDI25="ckdi25"
 
 
 #####################################################################
@@ -151,7 +134,6 @@ COLUMN_CKDI25=""
 JAFFE_BLOOD="0"
 
 # 1 if Jaffe assay was used prior to 2009, else 0
-# TODO: set automatically?
 JAFFE_PRE_2009="0"
 
 # Unit of serum creatinine measurements
@@ -163,7 +145,8 @@ CREATININE_SERUM_UNIT="1"
 CREATININE_URINARY_UNIT="1"
 
 # Unit of urinary albumin measurements
-# QUESTION: coding?
+# 0 = g/dl, 1 = mmol/l
+# TODO check
 ALBUMIN_URINARY_UNIT="0"
 
 # Unit of values in the UACR column (if present)
@@ -176,5 +159,5 @@ URATE_UNIT="1"
 
 # LOD (limit of detection) of urinary albumin assay
 # Unit: see ALBUMIN_URINARY_UNIT
-# QUESTION: mandatory?
+# Optional.
 LOD_URINARY_ALBUMIN=""
