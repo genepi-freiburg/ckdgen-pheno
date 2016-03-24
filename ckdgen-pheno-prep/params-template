@@ -14,28 +14,34 @@ STUDY_NAME="GCKD"
 
 # Name (and path) of the phenotype input file
 # Please replace with your file name.
-INPUT_FILE="XXXX"
+INPUT_FILE="testinput.txt"
 
 # Specify input file delimiter
 # Possible values: COMMA, SEMICOLON, WHITESPACE, TAB, AUTO
 # "AUTO" tries to detect the correct value.
 INPUT_FILE_DELIMITER="AUTO"
 
+# Absolute or relative path to output directory
+# All generated files will be placed in this directory
+# %TIMESTAMP% is replaced by a timestamp
+# %STUDY% is replaced by the study name
+OUTPUT_DIRECTORY="out-%STUDY%"
+
 # Name (and path) of the log file
 # %TIMESTAMP% is replaced by a timestamp
-# %STUDYNAME% is replaced by the study name
+# %STUDY% is replaced by the study name
 LOG_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.log"
 
 # Name (and path) of the error file
 # Format is CSV, columns: severity, line number, message
 # %TIMESTAMP% is replaced by a timestamp
-# %STUDYNAME% is replaced by the study name
+# %STUDY% is replaced by the study name
 ERROR_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.errors.csv"
 
 # Name (and path) of the output file
 # Output format is CSV.
 # %TIMESTAMP% is replaced by a timestamp
-# %STUDYNAME% is replaced by the study name
+# %STUDY% is replaced by the study name
 OUTPUT_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.out.csv"
 
 # Name (and path) of the summary statistics output files
