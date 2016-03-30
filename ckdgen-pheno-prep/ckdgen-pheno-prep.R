@@ -21,7 +21,7 @@ if (class(nephro) == "try-error") {
 
 study_name = Sys.getenv("STUDY_NAME")
 
-input_file = Sys.getenv("INPUT_FILE=")
+input_file = Sys.getenv("INPUT_FILE")
 input_file_delimiter = Sys.getenv("INPUT_FILE_DELIMITER")
 error_file = Sys.getenv("ERROR_FILE")
 output_file = Sys.getenv("OUTPUT_FILE")
@@ -65,26 +65,6 @@ for (mandatory_param in mandatory_params) {
   }
 }
 print("All mandatory parameters are present.")
-
-
-### MW TEST PARAMS (TODO: remove!)
-input_file = "../../phenotype.txt"
-input_file_delimiter = "AUTO"
-error_file = "errors.txt"
-output_file = "output.txt"
-summary_output_file_txt = "summaries.txt"
-summary_output_file_pdf = "summaries.pdf"
-column_age = "AGE"
-column_sex_male = "SEX"
-column_creatinine_serum = "SCR"
-column_urea_serum = "UREA"
-column_uacr = "UACR"
-column_creatinine_urinary = "UCR"
-jaffe_blood = "0"
-jaffe_pre_2009 = "0"
-creatinine_serum_unit = "1"
-creatinine_urinary_unit = "1"
-urate_unit = "1"
 
 
 ### READ INPUT FILE
@@ -329,12 +309,12 @@ if (urate_unit == "0") {
   output$uric_acid_serum = output$uric_acid_serum / 59.48
 }
 
-if (creatinine_serum_unit == "1") {
+if (creatinine_serum_unit == "0") {
   print("Convert serum creatinine from umol/l to mg/dl")
   output$creatinine_serum = output$creatinine_serum / 88.4
 }
 
-if (creatinine_urinary_unit == "1") {
+if (creatinine_urinary_unit == "0") {
   print("Convert urinary creatinine from umol/l to mg/dl")
   output$creatinine_urinary = output$creatinine_urinary / 88.4
 }
@@ -428,12 +408,12 @@ for (variable_name in colnames(output)) {
 # TODO correct ranges
 check_median_by_range("age", 1, 100)
 check_median_by_range("creatinine_serum", 0.5, 2.5)
-check_median_by_range("albumin_urinary", 0.5, 2.5)
-check_median_by_range("creatinine_urinary", 0.5, 2.5)
-check_median_by_range("uric_acid_serum", 0.5, 2.5)
-check_median_by_range("uacr", 0, 1)
+check_median_by_range("albumin_urinary", 0, 200)
+check_median_by_range("creatinine_urinary", 0, 200)
+check_median_by_range("uric_acid_serum", 2, 20)
+check_median_by_range("uacr", 0, 200)
 check_median_by_range("bun_serum", 10, 500)
-check_median_by_range("urea_serum", 10, 500)
+check_median_by_range("urea_serum", 10, 80)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 
 check_categorial("sex_male", c(0, 1))
@@ -442,6 +422,8 @@ check_categorial("hypertension", c(0, 1))
 check_categorial("diabetes", c(0, 1))
 check_categorial("large_proteinuria", c(0, 1))
 check_categorial("gout", c(0, 1))
+
+# TODO check range for fractions?
 
 if (nrow(errors) > 0) {
   print("WARNING: There have been messages during the variable consistency checks. Please check logs.")
@@ -522,13 +504,16 @@ for (variable in quantitative_variables) {
                    ylab = "Frequency", 
                    sub = paste(non_missing_records, " non-missing records (", missing_records, " NA)", sep = ""))
   
-  xfit = seq(min(output[, variable]), max(output[, variable]), length = 40)
-  yfit = dnorm(xfit, mean = mean(output[, variable]), sd = sd(output[, variable], na.rm = TRUE))
+  xfit = seq(min(output[, variable], na.rm = TRUE), 
+             max(output[, variable], na.rm = TRUE), length = 40)
+  yfit = dnorm(xfit, 
+               mean = mean(output[, variable], na.rm = TRUE), 
+               sd = sd(output[, variable], na.rm = TRUE))
   yfit = yfit * diff(histogram$mids[1:2]) * length(output[, variable])
   lines(xfit, yfit, col="blue", lwd = 2) 
 
   # density plot
-  d <- density(output[, variable])
+  d <- density(output[, variable], na.rm = TRUE)
   plot(d, 
        main=variable, 
        xlab=variable, 
