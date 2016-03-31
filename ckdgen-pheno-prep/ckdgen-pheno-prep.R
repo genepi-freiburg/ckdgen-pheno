@@ -291,11 +291,8 @@ for (column in all_columns) {
 
 if (jaffe_blood == "1") {
   if (jaffe_pre_2009 == "1") {
-    print("Correcting serum creatinine because of Jaffe assay (before 2009)")
-    ## TODO
-  } else {
-    print("Correcting serum creatinine because of Jaffe assay (after 2009)")
-    ## TODO
+    print("Correcting serum creatinine for Jaffe assay before 2009")
+    output$creatinine_serum = output$creatinine_serum * 0.95
   }
 }
 
@@ -405,7 +402,7 @@ for (variable_name in colnames(output)) {
   check_missingness(variable_name)
 }
 
-# TODO correct ranges
+# TODO improve ranges?
 check_median_by_range("age", 1, 100)
 check_median_by_range("creatinine_serum", 0.5, 2.5)
 check_median_by_range("albumin_urinary", 0, 200)
@@ -422,8 +419,6 @@ check_categorial("hypertension", c(0, 1))
 check_categorial("diabetes", c(0, 1))
 check_categorial("large_proteinuria", c(0, 1))
 check_categorial("gout", c(0, 1))
-
-# TODO check range for fractions?
 
 if (nrow(errors) > 0) {
   print("WARNING: There have been messages during the variable consistency checks. Please check logs.")
