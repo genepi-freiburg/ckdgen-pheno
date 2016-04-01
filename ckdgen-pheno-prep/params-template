@@ -55,6 +55,9 @@ SUMMARY_OUTPUT_FILE_PDF="ckdgen-pheno-%STUDY%-%TIMESTAMP%.summary.pdf"
 #####################################################################
 # Please adjust the names to fit important columns in your input file
 
+# Study specific individual ID
+COLUMN_INDIVIDUAL_ID="iid"
+
 ###------------------------------------------------------------------
 ### PATIENT DEMOGRAPHICS
 ###------------------------------------------------------------------

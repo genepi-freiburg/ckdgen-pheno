@@ -100,6 +100,7 @@ if (nrow(data) < 100 || ncol(data) < 10) {
 
 ### Column names
 
+column_individual_id = Sys.getenv("COLUMN_INDIVIDUAL_ID")
 column_age = Sys.getenv("COLUMN_AGE")
 column_sex_male = Sys.getenv("COLUMN_SEX_MALE")
 column_race_black = Sys.getenv("COLUMN_RACE_BLACK")
@@ -116,6 +117,7 @@ column_large_proteinuria = Sys.getenv("COLUMN_LARGE_PROTEINURIA")
 column_gout = Sys.getenv("COLUMN_GOUT")
 
 mandatory_columns = c(
+  "column_individual_id",
   "column_age",
   "column_sex_male",
   "column_race_black",
@@ -477,7 +479,7 @@ for (categorial_variable in categorial_variables) {
           sub = paste(nrow(output), "records;", zero, "'0',", one, "'1',", nav, "'NA'"))
 }
 
-# histograms
+# quantitative plots
 quantitative_variables = c(
   "age",
   "creatinine_serum",
@@ -491,16 +493,18 @@ quantitative_variables = c(
 )
 
 for (variable in quantitative_variables) {
+  par(mfrow = c(2, 2), oma = c(0, 0, 3, 0))
+  
   # box plot
   summ = summary(output[, variable])
   boxplot(output[, variable],
-          main = variable, 
+          main = "Box plot", 
           sub = paste(
             "min: ", summ[1], 
             ", q1: ", summ[2],
             ", med: ", summ[3],
-            ", mean: ", summ[4],
-            ", q3: ", summ[5],
+            ", mean: ", summ[4], ",\n",
+            "q3: ", summ[5],
             ", max: ", summ[6],
             ", na: ", ifelse(is.na(summ[7]), 0, summ[7]),
             sep = ""
@@ -511,10 +515,11 @@ for (variable in quantitative_variables) {
   missing_records = length(which(is.na(output[, variable])))
   
   histogram = hist(output[, variable], 
-                   breaks = 200, 
-                   main = variable, 
+                   breaks = 40, 
+                   col = "grey",
+                   main = "Histogram", 
                    xlab = variable, 
-                   ylab = "Frequency", 
+                   ylab = "Counts", 
                    sub = paste(non_missing_records, " non-missing records (", missing_records, " NA)", sep = ""))
   
   xfit = seq(min(output[, variable], na.rm = TRUE), 
@@ -526,12 +531,27 @@ for (variable in quantitative_variables) {
   lines(xfit, yfit, col="blue", lwd = 2) 
 
   # density plot
-  d <- density(output[, variable], na.rm = TRUE)
-  plot(d, 
-       main=variable, 
-       xlab=variable, 
-       ylab="Density",
-       sub = paste(non_missing_records, " non-missing records (", missing_records, " NA)", sep = ""))
+  histogram = hist(output[, variable], 
+                   breaks = 40, 
+                   prob = TRUE,
+                   col = "grey",
+                   main = "Density plot", 
+                   xlab = variable, 
+                   ylab = "Probability", 
+                   sub = paste(non_missing_records, " non-missing records (", missing_records, " NA)", sep = ""))
+  lines(density(output[, variable], na.rm = TRUE), col="red", lwd=2)
+  lines(density(output[, variable], na.rm = TRUE, adjust = 2), col="red", lwd=2, lty="dotted")
+  
+  xfit = seq(min(output[, variable], na.rm = TRUE), 
+             max(output[, variable], na.rm = TRUE), length = 40)
+  yfit = dnorm(xfit, 
+               mean = mean(output[, variable], na.rm = TRUE), 
+               sd = sd(output[, variable], na.rm = TRUE))
+  #yfit = yfit * diff(histogram$mids[1:2]) * length(output[, variable])
+  lines(xfit, yfit, col="blue", lwd = 2) 
+
+  mtext(variable, outer = TRUE, cex = 1.5)
+  
 }
 
 dev.off()
