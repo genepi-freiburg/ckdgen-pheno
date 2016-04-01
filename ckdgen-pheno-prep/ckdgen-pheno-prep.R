@@ -72,7 +72,7 @@ print("All mandatory parameters are present.")
 print(paste("Reading input file:", input_file))
 
 if (input_file_delimiter == "AUTO") {
-  data = try(read.table(input_file, header = TRUE))
+  data = try(read.table(input_file, header = TRUE, na.strings = c("NA", ".")))
 } else {
   if (input_file_delimiter == "TAB") {
     separator = "\t"
@@ -325,9 +325,10 @@ if (creatinine_urinary_unit == "0") {
 uacr_non_missing_count = length(which(!is.na(output$uacr)))
 if (uacr_non_missing_count == 0) {
   print("Calculating UACR")
+  # TODO maybe enhance UACR calculation using Cristian's code
   output$uacr = output$albumin_urinary / output$creatinine_urinary * 100
 } else {
-  print("Do not calculate UACR because there are values available.")
+  print("Do not calculate UACR because there are precalculated values available.")
 }
 
 # calculate eGFR (CKDEpi)
