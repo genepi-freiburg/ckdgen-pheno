@@ -371,6 +371,9 @@ if (bun_non_missing_count == 0) {
   print("Do not calculate BUN because there are values available.")
 }
 
+# remove urea column after calculation (keep only BUN)
+output$urea_serum = NULL 
+
 # calculate CKD (prefering eGFR_creat, using eGFR_cys if it is available and eGFR_creat not)
 output$egfr_ckdepi_creat_or_cys = ifelse(is.na(output$egfr_ckdepi_creat), output$egfr_ckdepi_cys, output$egfr_ckdepi_crea)
 output$ckd = ifelse(output$egfr_ckdepi_creat_or_cys < 60, 1, 0)
@@ -527,7 +530,6 @@ check_median_by_range("uric_acid_serum", 2, 20)
 check_median_by_range("uacr", 0, 200)
 check_median_by_range("upcr", 0, 400)
 check_median_by_range("bun_serum", 10, 500)
-check_median_by_range("urea_serum", 10, 80)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 check_median_by_range("egfr_ckdepi_cys", 0, 200)
 
@@ -593,7 +595,6 @@ quantitative_variables = c(
   "uacr",
   "upcr",
   "bun_serum",
-  "urea_serum",
   "egfr_ckdepi_creat",
   "egfr_ckdepi_cys"
 )
