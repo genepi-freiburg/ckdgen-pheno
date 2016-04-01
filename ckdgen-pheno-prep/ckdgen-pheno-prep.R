@@ -395,6 +395,7 @@ check_missingness = function(variable_name) {
 }
 
 check_categorial = function(variable_name, categories) {
+  # check that values are valid categories
   variable = output[, variable_name]
   invalid_lines = which(!(variable %in% categories))
   if (length(invalid_lines)) {
@@ -414,6 +415,35 @@ check_categorial = function(variable_name, categories) {
         # NA in one cell is ok
         # high missingness will be caught by different function
       }
+    }
+  }
+  
+  # check subgroup size
+  for (category in categories) {
+    category_size = length(which(variable == category))
+    if (category_size > 0 && category_size < 50) {
+      print(paste("Category ", category, " for '", variable_name, 
+                  "' only has ", category_size, 
+                  " members. Stratification will be difficult.", sep = ""))
+      
+      error = data.frame(severity = "WARNING", 
+                         line_number = NA, 
+                         message = "Small subgroup",
+                         param1 = paste(variable_name, "/", category),
+                         param2 = category_size)
+      
+      errors <<- rbind(errors, error)
+    } else if (category_size == 0) {
+      print(paste("Category ", category, " for '", variable_name, 
+                  "' not present.", sep = ""))
+      
+      error = data.frame(severity = "INFO", 
+                         line_number = NA, 
+                         message = "Category not present",
+                         param1 = variable_name,
+                         param2 = category)
+      
+      errors <<- rbind(errors, error)
     }
   }
 }
