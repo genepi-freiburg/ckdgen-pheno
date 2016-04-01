@@ -495,6 +495,8 @@ categorial_variables = c(
 )
 
 # bar plots
+par(mfrow = c(3, 3))
+
 for (categorial_variable in categorial_variables) {
   cat_table = table(output[, categorial_variable], useNA = "always")
   print(cat_table)
@@ -570,7 +572,7 @@ for (variable in quantitative_variables) {
                    ylab = "Probability", 
                    sub = paste(non_missing_records, " non-missing records (", missing_records, " NA)", sep = ""))
   lines(density(output[, variable], na.rm = TRUE), col="red", lwd=2)
-  lines(density(output[, variable], na.rm = TRUE, adjust = 2), col="red", lwd=2, lty="dotted")
+  #lines(density(output[, variable], na.rm = TRUE, adjust = 2), col="red", lwd=2, lty="dotted")
   
   xfit = seq(min(output[, variable], na.rm = TRUE), 
              max(output[, variable], na.rm = TRUE), length = 40)
