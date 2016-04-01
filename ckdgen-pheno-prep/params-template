@@ -4,6 +4,8 @@
 #####################################################################
 #####################################################################
 
+set -a
+
 # Name of your study
 STUDY_NAME="GCKD"
 
@@ -78,16 +80,35 @@ COLUMN_RACE_BLACK="black"
 # Serum creatinine (unit: must be configured below)
 COLUMN_CREATININE_SERUM="screa"
 
+# Serum cystatin C (unit: mg/l)
+# Optional.
+COLUMN_CYSTATINC_SERUM="scyst"
+
 # Urinary creatinine (unit: must be configured below)
+# Optional (if not available, cannot calculate uacr/upcr)
 COLUMN_CREATININE_URINARY="ucrea"
 
 # Urinary albumin (unit: mg/l)
+# Optional
 COLUMN_ALBUMIN_URINARY="ualb"
+
+# Urinary protein (unit: mg/l)
+# Optional (if urinary albumin is not available)
+COLUMN_PROTEIN_URINARY=""
 
 # UACR (Urinary albumin-creatinine ratio)
 # Unit: must be configured below
-# Optional, will be calculated if no column name given
-COLUMN_UACR=""
+# Optional, will be calculated if data available and no column name given
+COLUMN_UACR="uacr"
+
+# UPCR (Urinary protein-creatinine ratio)
+# Unit: must be configured below
+# Optional, will be calculated if data available and no column name given
+COLUMN_UPCR=""
+
+# Proteinuria Dipstick test (1: positive / >= 1+, 0: negative)
+# Optional
+COLUMN_PROTEINURIA_DIPSTICK_POSITIVE=""
 
 # Serum BUN (blood urea nitrogen; unit: mg/dl)
 # Optional, Urea column is used if this column name is empty
@@ -109,10 +130,6 @@ COLUMN_HYPERTENSION="htn"
 
 # DM / Diabetes mellitus (0 = no DM, 1 = DM, NA = unknown)
 COLUMN_DIABETES="diabetes"
-
-# Large proteinuria (0 = no, 1 = yes, NA = unknown)
-# Dipstick: 1+, or: UACR > 30 mg/g, or: UPCR > 50 mg/g (??)
-COLUMN_LARGE_PROTEINURIA="large_prot"
 
 # Gout (0 = no, 1 = yes, NA = unknown)
 COLUMN_GOUT="gout"
@@ -137,19 +154,23 @@ JAFFE_BLOOD="0"
 # rationale: if the assay was acquired prior to 2009, creatinine needs
 # to be adjusted
 # format: YYYY
-JAFFE_YEAR=""
+JAFFE_YEAR="2012"
 
 # Unit of serum creatinine measurements
 # 0 = umol/l, 1 = mg/dl
 CREATININE_SERUM_UNIT="1"
 
-# Unit of urinary creatinine measurements
+# Unit of urinary creatinine measurements (if present)
 # 0 = umol/l, 1 = mg/dl
 CREATININE_URINARY_UNIT="1"
 
 # Unit of values in the UACR column (if present)
 # 0 = mg/mmol, 1 = mg/g
 UACR_UNIT="1"
+
+# Unit of values in the UPCR column (if present)
+# 0 = mg/mmol, 1 = mg/g
+UPCR_UNIT="1"
 
 # Unit of urate measurements
 # 0 = umol/l, 1 = mg/dl
@@ -159,3 +180,8 @@ URATE_UNIT="1"
 # Unit: see ALBUMIN_URINARY_UNIT
 # Optional.
 LOD_URINARY_ALBUMIN=""
+
+# LOD (limit of detection) of urinary protein assay
+# Unit: see PROTEIN_URINARY_UNIT
+# Optional.
+LOD_URINARY_PROTEIN=""

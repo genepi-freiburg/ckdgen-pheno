@@ -38,8 +38,10 @@ jaffe_year = Sys.getenv("JAFFE_YEAR")
 creatinine_serum_unit = Sys.getenv("CREATININE_SERUM_UNIT")
 creatinine_urinary_unit = Sys.getenv("CREATININE_URINARY_UNIT")
 uacr_unit = Sys.getenv("UACR_UNIT")
+upcr_unit = Sys.getenv("UPCR_UNIT")
 urate_unit = Sys.getenv("URATE_UNIT")
 lod_urinary_albumin = Sys.getenv("LOD_URINARY_ALBUMIN")
+lod_urinary_protein = Sys.getenv("LOD_URINARY_PROTEIN")
 
 
 ### CHECK PARAMS
@@ -105,15 +107,18 @@ column_age = Sys.getenv("COLUMN_AGE")
 column_sex_male = Sys.getenv("COLUMN_SEX_MALE")
 column_race_black = Sys.getenv("COLUMN_RACE_BLACK")
 column_creatinine_serum = Sys.getenv("COLUMN_CREATININE_SERUM")
+column_cystatinc_serum = Sys.getenv("COLUMN_CYSTATINC_SERUM")
 column_creatinine_urinary = Sys.getenv("COLUMN_CREATININE_URINARY")
 column_albumin_urinary = Sys.getenv("COLUMN_ALBUMIN_URINARY")
+column_protein_urinary = Sys.getenv("COLUMN_PROTEIN_URINARY")
 column_uacr = Sys.getenv("COLUMN_UACR")
+column_upcr = Sys.getenv("COLUMN_UPCR")
 column_bun_serum = Sys.getenv("COLUMN_BUN_SERUM")
 column_urea_serum = Sys.getenv("COLUMN_UREA_SERUM")
 column_uric_acid_serum = Sys.getenv("COLUMN_URIC_ACID_SERUM")
 column_hypertension = Sys.getenv("COLUMN_HYPERTENSION")
 column_diabetes = Sys.getenv("COLUMN_DIABETES")
-column_large_proteinuria = Sys.getenv("COLUMN_LARGE_PROTEINURIA")
+column_proteinuria_dipstick_positive = Sys.getenv("COLUMN_PROTEINURIA_DIPSTICK_POSITIVE")
 column_gout = Sys.getenv("COLUMN_GOUT")
 
 mandatory_columns = c(
@@ -122,19 +127,22 @@ mandatory_columns = c(
   "column_sex_male",
   "column_race_black",
   "column_creatinine_serum",
-  "column_creatinine_urinary",
-  "column_albumin_urinary",
   "column_uric_acid_serum",
   "column_hypertension",
   "column_diabetes",
-  "column_large_proteinuria",
   "column_gout"
 )
 
 optional_columns = c(
+  "column_cystatinc_serum",
+  "column_creatinine_urinary",
+  "column_albumin_urinary",
+  "column_protein_urinary",
   "column_uacr",
+  "column_upcr",
   "column_bun_serum",
-  "column_urea_serum"
+  "column_urea_serum",
+  "column_proteinuria_dipstick_positive"
 )
 
 all_columns = c(mandatory_columns, optional_columns)
@@ -230,7 +238,7 @@ for (optional_column in optional_columns) {
 # Stop if there are errors
 if (nrow(errors) > 0) {
   write.table(errors, error_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
-  stop(paste("There are errors such as missing Columns.",
+  stop(paste("There are errors such as missing columns.",
              "Please check the error file and the logs.",
              "Either adjust the column names or your input file.", sep="\n"))
 }
@@ -248,7 +256,7 @@ for (column in all_columns) {
   column_name = get(column)
   if (column_name == "") {
     # must be optional
-    print(paste("Skipping summary statistics for", column, "/", column_name))
+    print(paste("Skipping summary statistics for", column, " - column not present"))
     next;
   }
   
@@ -303,6 +311,11 @@ if (uacr_unit == "0") {
   output$uacr = output$uacr * 8.84
 }
 
+if (upcr_unit == "0") {
+  print("Convert UPCR from mg/mmol to mg/g")
+  output$upcr = output$upcr * 8.84
+}
+
 if (urate_unit == "0") {
   print("Convert uric acid from umol/l to mg/dl")
   output$uric_acid_serum = output$uric_acid_serum / 59.48
@@ -321,7 +334,7 @@ if (creatinine_urinary_unit == "0") {
 
 ### CALCULATE ADDITIONAL COLUMNS IN OUTPUT
 
-# calculate UACR
+# calculate UACR (this code also works if albumin_urinary or creatinine_urinary is NA)
 uacr_non_missing_count = length(which(!is.na(output$uacr)))
 if (uacr_non_missing_count == 0) {
   print("Calculating UACR")
@@ -331,9 +344,23 @@ if (uacr_non_missing_count == 0) {
   print("Do not calculate UACR because there are precalculated values available.")
 }
 
+# calculate UPCR (this code also works if protein_urinary or creatinine_urinary is NA)
+upcr_non_missing_count = length(which(!is.na(output$upcr)))
+if (upcr_non_missing_count == 0) {
+  print("Calculating UPCR")
+  # TODO maybe enhance UPCR calculation using Cristian's code
+  output$upcr = output$protein_urinary / output$creatinine_urinary * 100
+} else {
+  print("Do not calculate UPCR because there are precalculated values available.")
+}
+
 # calculate eGFR (CKDEpi)
-print("Calculating eGFR (CKDEpi)")
+print("Calculating eGFR creat (CKDEpi)")
 output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, output$age, output$race_black)
+
+# calculate eGFR (CKDEpi)
+print("Calculating eGFR cys (CKDEpi)")
+output$egfr_ckdepi_cys = CKDEpi.cys(output$cystatinc_serum, output$sex_male, output$age)
 
 # calculate BUN
 bun_non_missing_count = length(which(!is.na(output$bun_serum)))
@@ -343,6 +370,38 @@ if (bun_non_missing_count == 0) {
 } else {
   print("Do not calculate BUN because there are values available.")
 }
+
+# calculate CKD
+output$egfr_ckdepi_creat_or_cys = ifelse(is.na(output$egfr_ckdepi_creat), output$egfr_ckdepi_cys, output$egfr_ckdepi_crea)
+output$ckd = ifelse(output$egfr_ckdepi_creat_or_cys < 60, 1, 0)
+
+# calculate microalbuminuria
+output$microalbuminuria = NA
+
+# use dipstick data
+dipstick_positive = which(output$proteinuria_dipstick_positive == 1)
+dipstick_negative = which(output$proteinuria_dipstick_positive == 1)
+
+output[dipstick_positive, "microalbuminuria"] = 1
+output[dipstick_negative, "microalbuminuria"] = 1
+
+# overwrite with UPCR data
+upcr_high = which(output$upcr > 50)
+upcr_low = which(output$upcr < 10)
+upcr_medium = which(output$upcr >= 10 && output$upcr <= 50)
+
+output[upcr_high, "microalbuminuria"] = 1
+output[upcr_medium, "microalbuminuria"] = NA
+output[upcr_low, "microalbuminuria"] = NA
+
+# finally, overwrite with UACR data
+uacr_high = which(output$uacr > 30)
+uacr_low = which(output$uacr < 10)
+uacr_medium = which(output$uacr >= 10 && output$uacr <= 30)
+
+output[uacr_high, "microalbuminuria"] = 1
+output[uacr_low, "microalbuminuria"] = 0
+output[uacr_medium, "microalbuminuria"] = NA
 
 
 ### CONSISTENCY CHECKS ON VARIABLES
@@ -377,11 +436,15 @@ check_median_by_range = function(variable_name, median_low, median_high) {
   }
 }
 
-check_missingness = function(variable_name) {
+calc_missingness = function(variable_name) {
   variable = output[, variable_name]
   missings = length(which(is.na(variable)))
   totals = nrow(output)
-  fract = missings / totals
+  missings / totals
+}
+
+check_missingness = function(variable_name) {
+  fract = calc_missingness(variable_name)
   if (fract > 0.1) {
     print(paste("High missingness (>10%) for '", variable_name, "': ", fract, sep = ""))
     
@@ -456,20 +519,24 @@ for (variable_name in colnames(output)) {
 # TODO improve ranges?
 check_median_by_range("age", 1, 100)
 check_median_by_range("creatinine_serum", 0.5, 2.5)
+check_median_by_range("cystatinc_serum", 0.5, 2.5)
 check_median_by_range("albumin_urinary", 0, 200)
+check_median_by_range("protein_urinary", 0, 400)
 check_median_by_range("creatinine_urinary", 0, 200)
 check_median_by_range("uric_acid_serum", 2, 20)
 check_median_by_range("uacr", 0, 200)
+check_median_by_range("upcr", 0, 400)
 check_median_by_range("bun_serum", 10, 500)
 check_median_by_range("urea_serum", 10, 80)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
+check_median_by_range("egfr_ckdepi_cys", 0, 200)
 
 check_categorial("sex_male", c(0, 1))
 check_categorial("race_black", c(0, 1))
 check_categorial("hypertension", c(0, 1))
 check_categorial("diabetes", c(0, 1))
-check_categorial("large_proteinuria", c(0, 1))
 check_categorial("gout", c(0, 1))
+check_categorial("proteinuria_dipstick_positive", c(0, 1))
 
 if (nrow(errors) > 0) {
   print("WARNING: There have been messages during the variable consistency checks. Please check logs.")
@@ -491,8 +558,10 @@ categorial_variables = c(
   "race_black", 
   "hypertension", 
   "diabetes", 
-  "large_proteinuria", 
-  "gout"
+  "gout",
+  "proteinuria_dipstick_positive",
+  "ckd",
+  "microalbuminuria"
 )
 
 # bar plots
@@ -500,7 +569,7 @@ par(mfrow = c(3, 3))
 
 for (categorial_variable in categorial_variables) {
   cat_table = table(output[, categorial_variable], useNA = "always")
-  print(cat_table)
+  print(paste(categorial_variable, cat_table))
   zero = length(which(output[, categorial_variable] == "0"))
   one = length(which(output[, categorial_variable] == "1"))
   nav = length(which(is.na(output[, categorial_variable])))
@@ -516,16 +585,26 @@ for (categorial_variable in categorial_variables) {
 quantitative_variables = c(
   "age",
   "creatinine_serum",
+  "cystatinc_serum",
   "albumin_urinary",
+  "protein_urinary",
   "creatinine_urinary",
   "uric_acid_serum",
   "uacr",
+  "upcr",
   "bun_serum",
   "urea_serum",
-  "egfr_ckdepi_creat"
+  "egfr_ckdepi_creat",
+  "egfr_ckdepi_cys"
 )
 
 for (variable in quantitative_variables) {
+  if (calc_missingness(variable) == 1) {
+    # don't plot if we do not have any values
+    print(paste("Skip plotting of variable '", variable, "' because of missingness.", sep = ""))
+    next;
+  }
+  
   par(mfrow = c(2, 2), oma = c(0, 0, 3, 0))
   
   # box plot
