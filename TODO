@@ -1,5 +1,7 @@
 TODO
 
+- year of creatinine
+- plots next to each other
 - include variable for individual ID
 - check for small (<50) sub groups in categorial variables and warn
 - add more variables (wait for finalized analysis plan)
