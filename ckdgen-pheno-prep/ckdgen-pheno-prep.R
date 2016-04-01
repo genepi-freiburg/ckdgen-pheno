@@ -324,6 +324,8 @@ uacr_non_missing_count = length(which(!is.na(output$uacr)))
 if (uacr_non_missing_count == 0) {
   print("Calculating UACR")
   output$uacr = output$albumin_urinary / output$creatinine_urinary * 100
+} else {
+  print("Do not calculate UACR because there are values available.")
 }
 
 # calculate eGFR (CKDEpi)
@@ -335,6 +337,8 @@ bun_non_missing_count = length(which(!is.na(output$bun_serum)))
 if (bun_non_missing_count == 0) {
   print("Calculating BUN")
   output$bun_serum = output$urea_serum * 2.8
+} else {
+  print("Do not calculate BUN because there are values available.")
 }
 
 
@@ -356,6 +360,17 @@ check_median_by_range = function(variable_name, median_low, median_high) {
       
       errors <<- rbind(errors, error)
     }
+  } else {
+    print(paste("Unable to calculate median for '", variable_name, 
+                "': No values available.", sep = ""))
+    
+    error = data.frame(severity = "WARNING", 
+                       line_number = NA, 
+                       message = "NA median",
+                       param1 = variable_name,
+                       param2 = var_median)
+    
+    errors <<- rbind(errors, error)
   }
 }
 
@@ -393,6 +408,9 @@ check_categorial = function(variable_name, categories) {
                            param2 = variable[line])
         
         errors <<- rbind(errors, error)
+      } else {
+        # NA in one cell is ok
+        # high missingness will be caught by different function
       }
     }
   }
