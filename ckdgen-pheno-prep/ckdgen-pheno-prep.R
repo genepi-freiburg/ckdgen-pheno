@@ -371,21 +371,21 @@ if (bun_non_missing_count == 0) {
   print("Do not calculate BUN because there are values available.")
 }
 
-# calculate CKD
+# calculate CKD (prefering eGFR_creat, using eGFR_cys if it is available and eGFR_creat not)
 output$egfr_ckdepi_creat_or_cys = ifelse(is.na(output$egfr_ckdepi_creat), output$egfr_ckdepi_cys, output$egfr_ckdepi_crea)
 output$ckd = ifelse(output$egfr_ckdepi_creat_or_cys < 60, 1, 0)
 
 # calculate microalbuminuria
 output$microalbuminuria = NA
 
-# use dipstick data
+# use dipstick data (where it is available)
 dipstick_positive = which(output$proteinuria_dipstick_positive == 1)
-dipstick_negative = which(output$proteinuria_dipstick_positive == 1)
+dipstick_negative = which(output$proteinuria_dipstick_positive == 0)
 
 output[dipstick_positive, "microalbuminuria"] = 1
-output[dipstick_negative, "microalbuminuria"] = 1
+output[dipstick_negative, "microalbuminuria"] = 0
 
-# overwrite with UPCR data
+# overwrite with UPCR data (only where data is available)
 upcr_high = which(output$upcr > 50)
 upcr_low = which(output$upcr < 10)
 upcr_medium = which(output$upcr >= 10 && output$upcr <= 50)
@@ -394,7 +394,7 @@ output[upcr_high, "microalbuminuria"] = 1
 output[upcr_medium, "microalbuminuria"] = NA
 output[upcr_low, "microalbuminuria"] = NA
 
-# finally, overwrite with UACR data
+# finally, overwrite with UACR data (only where data is available)
 uacr_high = which(output$uacr > 30)
 uacr_low = which(output$uacr < 10)
 uacr_medium = which(output$uacr >= 10 && output$uacr <= 30)
