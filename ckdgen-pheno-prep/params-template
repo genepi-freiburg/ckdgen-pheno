@@ -65,9 +65,8 @@ COLUMN_AGE="age"
 # Patient sex (1 = male, 0 = female)
 COLUMN_SEX_MALE="male"
 
-# Race (0 = European American, 1 = African American, 2 = Asian, 3 = Hispanic)
-# DISCUSS: COLUMN_BLACK, only 0/1
-COLUMN_RACE="race"
+# Race (0 = other ancestry, 1 = African American ("black") ancestry)
+COLUMN_RACE_BLACK="black"
 
 ###------------------------------------------------------------------
 ### LAB VALUES
@@ -131,8 +130,11 @@ COLUMN_GOUT="gout"
 # 1 if Jaffe assay used for measurement of creatinine in blood, else 0
 JAFFE_BLOOD="0"
 
-# 1 if Jaffe assay was used prior to 2009, else 0
-JAFFE_PRE_2009="0"
+# year of Jaffe assay; please ask your lab
+# rationale: if the assay was acquired prior to 2009, creatinine needs
+# to be adjusted
+# format: YYYY
+JAFFE_YEAR=""
 
 # Unit of serum creatinine measurements
 # 0 = umol/l, 1 = mg/dl

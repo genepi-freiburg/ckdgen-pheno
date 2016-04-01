@@ -34,7 +34,7 @@ errors = data.frame()
 ### FURTHER PARAMS
 
 jaffe_blood = Sys.getenv("JAFFE_BLOOD")
-jaffe_pre_2009 = Sys.getenv("JAFFE_PRE_2009")
+jaffe_year = Sys.getenv("JAFFE_YEAR")
 creatinine_serum_unit = Sys.getenv("CREATININE_SERUM_UNIT")
 creatinine_urinary_unit = Sys.getenv("CREATININE_URINARY_UNIT")
 uacr_unit = Sys.getenv("UACR_UNIT")
@@ -52,7 +52,7 @@ mandatory_params = c(
   "summary_output_file_txt",
   "summary_output_file_pdf",
   "jaffe_blood",
-  "jaffe_pre_2009",
+  "jaffe_year",
   "creatinine_serum_unit",
   "creatinine_urinary_unit",
   "urate_unit"
@@ -102,7 +102,7 @@ if (nrow(data) < 100 || ncol(data) < 10) {
 
 column_age = Sys.getenv("COLUMN_AGE")
 column_sex_male = Sys.getenv("COLUMN_SEX_MALE")
-column_race = Sys.getenv("COLUMN_RACE")
+column_race_black = Sys.getenv("COLUMN_RACE_BLACK")
 column_creatinine_serum = Sys.getenv("COLUMN_CREATININE_SERUM")
 column_creatinine_urinary = Sys.getenv("COLUMN_CREATININE_URINARY")
 column_albumin_urinary = Sys.getenv("COLUMN_ALBUMIN_URINARY")
@@ -118,7 +118,7 @@ column_gout = Sys.getenv("COLUMN_GOUT")
 mandatory_columns = c(
   "column_age",
   "column_sex_male",
-  "column_race",
+  "column_race_black",
   "column_creatinine_serum",
   "column_creatinine_urinary",
   "column_albumin_urinary",
@@ -290,7 +290,7 @@ for (column in all_columns) {
 ### UNIT CONVERSIONS
 
 if (jaffe_blood == "1") {
-  if (jaffe_pre_2009 == "1") {
+  if (jaffe_year < "2009") {
     print("Correcting serum creatinine for Jaffe assay before 2009")
     output$creatinine_serum = output$creatinine_serum * 0.95
   }
@@ -330,7 +330,7 @@ if (uacr_non_missing_count == 0) {
 
 # calculate eGFR (CKDEpi)
 print("Calculating eGFR (CKDEpi)")
-output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, output$age, output$race)
+output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, output$age, output$race_black)
 
 # calculate BUN
 bun_non_missing_count = length(which(!is.na(output$bun_serum)))
@@ -432,7 +432,7 @@ check_median_by_range("urea_serum", 10, 80)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 
 check_categorial("sex_male", c(0, 1))
-check_categorial("race", c(0, 1))
+check_categorial("race_black", c(0, 1))
 check_categorial("hypertension", c(0, 1))
 check_categorial("diabetes", c(0, 1))
 check_categorial("large_proteinuria", c(0, 1))
@@ -455,7 +455,7 @@ pdf(summary_output_file_pdf)
 
 categorial_variables = c(
   "sex_male", 
-  "race", 
+  "race_black", 
   "hypertension", 
   "diabetes", 
   "large_proteinuria", 
