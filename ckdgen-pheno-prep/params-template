@@ -78,6 +78,7 @@ COLUMN_RACE_BLACK="black"
 ###------------------------------------------------------------------
 
 # Serum creatinine (unit: must be configured below)
+# Optional.
 COLUMN_CREATININE_SERUM="screa"
 
 # Serum cystatin C (unit: mg/l)
@@ -106,6 +107,7 @@ COLUMN_BUN_SERUM=""
 COLUMN_UREA_SERUM="urea"
 
 # Serum uric acid (unit: must be configured below)
+# Optional.
 COLUMN_URIC_ACID_SERUM="uric_acid"
 
 ###------------------------------------------------------------------
@@ -119,6 +121,7 @@ COLUMN_HYPERTENSION="htn"
 COLUMN_DIABETES="diabetes"
 
 # Gout (0 = no, 1 = yes, NA = unknown)
+# Optional.
 COLUMN_GOUT="gout"
 
 ###------------------------------------------------------------------

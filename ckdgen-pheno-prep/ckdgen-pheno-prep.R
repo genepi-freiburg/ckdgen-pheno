@@ -50,12 +50,12 @@ mandatory_params = c(
   "error_file",
   "output_file",
   "summary_output_file_txt",
-  "summary_output_file_pdf",
-  "jaffe_blood",
-  "jaffe_year",
-  "creatinine_serum_unit",
-  "creatinine_urinary_unit",
-  "urate_unit"
+  "summary_output_file_pdf"
+# "jaffe_blood",
+# "jaffe_year",
+# "creatinine_serum_unit",
+# "creatinine_urinary_unit",
+# "urate_unit"
 )
 
 for (mandatory_param in mandatory_params) {
@@ -123,22 +123,22 @@ mandatory_columns = c(
   "column_age",
   "column_sex_male",
   "column_race_black",
-  "column_creatinine_serum",
-  "column_uric_acid_serum",
   "column_hypertension",
-  "column_diabetes",
-  "column_gout"
+  "column_diabetes"
 )
 
 optional_columns = c(
+  "column_creatinine_serum",
   "column_cystatinc_serum",
+  "column_uric_acid_serum",
   "column_creatinine_urinary",
   "column_albumin_urinary",
   "column_uacr",
   "column_bun_serum",
   "column_urea_serum",
   "column_creatinine_serum_second",
-  "column_creatinine_measurement_distance"
+  "column_creatinine_measurement_distance",
+  "column_gout"
 )
 
 all_columns = c(mandatory_columns, optional_columns)
@@ -177,8 +177,8 @@ for (mandatory_column in mandatory_columns) {
 
 if (column_bun_serum == "" &&
     column_urea_serum == "") {
-  print(paste("Either BUN or UREA column name must be given."))
-  error = data.frame(severity = "ERROR", 
+  print(paste("Either BUN or UREA column name should be given."))
+  error = data.frame(severity = "WARNING", 
                      line_number = NA, 
                      message = "BUN or UREA column name missing",
                      param1 = "column_bun_serum",
