@@ -92,23 +92,10 @@ COLUMN_CREATININE_URINARY="ucrea"
 # Optional
 COLUMN_ALBUMIN_URINARY="ualb"
 
-# Urinary protein (unit: mg/l)
-# Optional (if urinary albumin is not available)
-COLUMN_PROTEIN_URINARY=""
-
 # UACR (Urinary albumin-creatinine ratio)
 # Unit: must be configured below
 # Optional, will be calculated if data available and no column name given
 COLUMN_UACR="uacr"
-
-# UPCR (Urinary protein-creatinine ratio)
-# Unit: must be configured below
-# Optional, will be calculated if data available and no column name given
-COLUMN_UPCR=""
-
-# Proteinuria Dipstick test (1: positive / >= 1+, 0: negative)
-# Optional
-COLUMN_PROTEINURIA_DIPSTICK_POSITIVE=""
 
 # Serum BUN (blood urea nitrogen; unit: mg/dl)
 # Optional, Urea column is used if this column name is empty
@@ -168,10 +155,6 @@ CREATININE_URINARY_UNIT="1"
 # 0 = mg/mmol, 1 = mg/g
 UACR_UNIT="1"
 
-# Unit of values in the UPCR column (if present)
-# 0 = mg/mmol, 1 = mg/g
-UPCR_UNIT="1"
-
 # Unit of urate measurements
 # 0 = umol/l, 1 = mg/dl
 URATE_UNIT="1"
@@ -180,8 +163,3 @@ URATE_UNIT="1"
 # Unit: see ALBUMIN_URINARY_UNIT
 # Optional.
 LOD_URINARY_ALBUMIN=""
-
-# LOD (limit of detection) of urinary protein assay
-# Unit: see PROTEIN_URINARY_UNIT
-# Optional.
-LOD_URINARY_PROTEIN=""
