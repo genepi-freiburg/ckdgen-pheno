@@ -125,9 +125,17 @@ COLUMN_GOUT="gout"
 ### EGFR DECLINE PHENOTYPES
 ###------------------------------------------------------------------
 
-# eGFR decline (absolute decline per year)
-# DISCUSS: separate script for longitudinal data? which columns to include?
+# if your study has no longitudinal creatinine measurements,
+# you can skip this section and leave the column names empty
 
+# Column name with second serum creatinine measurement
+# Option (leave empty if you don't have serial creatinines)
+# Unit: see CREATININE_SERUM_UNIT
+COLUMN_CREATININE_SERUM_SECOND=""
+
+# Column name for the distance (years) between creatinine measurements
+# Optional (but must be given if you set COLUMN_CREATININE_SERUM_SECOND)
+COLUMN_CREATININE_MEASUREMENT_DISTANCE=""
 
 #####################################################################
 ### STUDY PARAMETERS
@@ -159,7 +167,8 @@ UACR_UNIT="1"
 # 0 = umol/l, 1 = mg/dl
 URATE_UNIT="1"
 
-# LOD (limit of detection) of urinary albumin assay
+# LOD (limit of detection) of urinary albumin assay.
+# Example: 10 mg/L for HemoCue® and 3 mg/L for ProSpec®
 # Unit: see ALBUMIN_URINARY_UNIT
 # Optional.
 LOD_URINARY_ALBUMIN=""

@@ -115,6 +115,8 @@ column_uric_acid_serum = Sys.getenv("COLUMN_URIC_ACID_SERUM")
 column_hypertension = Sys.getenv("COLUMN_HYPERTENSION")
 column_diabetes = Sys.getenv("COLUMN_DIABETES")
 column_gout = Sys.getenv("COLUMN_GOUT")
+column_creatinine_serum_second = Sys.getenv("COLUMN_CREATININE_SERUM_SECOND")
+column_creatinine_measurement_distance = Sys.getenv("COLUMN_CREATININE_MEASUREMENT_DISTANCE")
 
 mandatory_columns = c(
   "column_individual_id",
@@ -134,7 +136,9 @@ optional_columns = c(
   "column_albumin_urinary",
   "column_uacr",
   "column_bun_serum",
-  "column_urea_serum"
+  "column_urea_serum",
+  "column_creatinine_serum_second",
+  "column_creatinine_measurement_distance"
 )
 
 all_columns = c(mandatory_columns, optional_columns)
@@ -356,55 +360,65 @@ output$egfr_ckdepi_creat_or_cys = ifelse(is.na(output$egfr_ckdepi_creat), output
 output$ckd = ifelse(output$egfr_ckdepi_creat_or_cys < 60, 1, 0)
 
 # calculate microalbuminuria
-output$microalbuminuria = NA
-
 # TODO keep values in the range [10-30]?
+output$microalbuminuria = NA
 uacr_high = which(output$uacr > 30)
 uacr_low = which(output$uacr < 10)
 uacr_medium = which(output$uacr >= 10 && output$uacr <= 30)
-
 output[uacr_high, "microalbuminuria"] = 1
 output[uacr_low, "microalbuminuria"] = 0
 output[uacr_medium, "microalbuminuria"] = NA
 
+# calculate longitudinal phenotypes
+# TODO to be done
 
 ### CONSISTENCY CHECKS ON VARIABLES
 
 check_median_by_range = function(variable_name, median_low, median_high) {
-  variable = output[, variable_name]
-  var_median = median(variable, na.rm = TRUE)
-  if (!is.na(var_median)) {
-    if (var_median < median_low || var_median > median_high) {
-      print(paste("Suspicious median for '", variable_name, "': ", var_median, 
-                  " not in [", median_low, "; ", median_high, "]", sep = ""))
+  if (!(variable_name %in% colnames(output))) {
+    print(paste("No column for variable '", variable_name, "' in output - skip median check.",
+                sep = ""))
+  } else {
+    variable = output[, variable_name]
+    var_median = median(variable, na.rm = TRUE)
+    if (!is.na(var_median)) {
+      if (var_median < median_low || var_median > median_high) {
+        print(paste("Suspicious median for '", variable_name, "': ", var_median, 
+                    " not in [", median_low, "; ", median_high, "]", sep = ""))
+        
+        error = data.frame(severity = "WARNING", 
+                           line_number = NA, 
+                           message = "Suspicious median",
+                           param1 = variable_name,
+                           param2 = var_median)
+        
+        errors <<- rbind(errors, error)
+      }
+    } else {
+      print(paste("Unable to calculate median for '", variable_name, 
+                  "': No values available.", sep = ""))
       
       error = data.frame(severity = "WARNING", 
                          line_number = NA, 
-                         message = "Suspicious median",
+                         message = "NA median",
                          param1 = variable_name,
                          param2 = var_median)
       
       errors <<- rbind(errors, error)
     }
-  } else {
-    print(paste("Unable to calculate median for '", variable_name, 
-                "': No values available.", sep = ""))
-    
-    error = data.frame(severity = "WARNING", 
-                       line_number = NA, 
-                       message = "NA median",
-                       param1 = variable_name,
-                       param2 = var_median)
-    
-    errors <<- rbind(errors, error)
   }
 }
 
 calc_missingness = function(variable_name) {
-  variable = output[, variable_name]
-  missings = length(which(is.na(variable)))
-  totals = nrow(output)
-  missings / totals
+  if (variable_name %in% colnames(output)) {
+    variable = output[, variable_name]
+    missings = length(which(is.na(variable)))
+    totals = nrow(output)
+    missings / totals
+  } else {
+    # everything is missing - return 1.0
+    1.0
+  }
 }
 
 check_missingness = function(variable_name) {
@@ -491,6 +505,8 @@ check_median_by_range("uacr", 0, 200)
 check_median_by_range("bun_serum", 10, 500)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 check_median_by_range("egfr_ckdepi_cys", 0, 200)
+check_median_by_range("creatinine_serum_secondary", 0.5, 2.5)
+check_median_by_range("creatinine_measurement_distance", 0, 10)
 
 check_categorial("sex_male", c(0, 1))
 check_categorial("race_black", c(0, 1))
@@ -521,6 +537,7 @@ categorial_variables = c(
   "gout",
   "ckd",
   "microalbuminuria"
+  # TODO add longitudinal traits
 )
 
 # bar plots
@@ -544,6 +561,8 @@ for (categorial_variable in categorial_variables) {
 quantitative_variables = c(
   "age",
   "creatinine_serum",
+  "creatinine_serum_secondary",
+  "creatinine_measurement_distance",
   "cystatinc_serum",
   "albumin_urinary",
   "creatinine_urinary",
@@ -552,6 +571,7 @@ quantitative_variables = c(
   "bun_serum",
   "egfr_ckdepi_creat",
   "egfr_ckdepi_cys"
+  # TODO add longitudinal traits
 )
 
 for (variable in quantitative_variables) {
