@@ -85,7 +85,7 @@ if (input_file_delimiter == "AUTO") {
   } else {
     stop(paste("unknown INPUT_FILE_DELIMITER:", input_file_delimiter))
   }
-  data = try(read.table(input_file, header = TRUE, sep = separator))
+  data = try(read.table(input_file, header = TRUE, sep = separator, na.strings=c("NA", ".")))
 }
 
 if (class(data) == "try-error") {
