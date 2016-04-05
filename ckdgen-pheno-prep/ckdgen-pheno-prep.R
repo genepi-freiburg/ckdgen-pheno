@@ -20,6 +20,7 @@ if (class(nephro) == "try-error") {
 ### I/O PARAMS
 
 study_name = Sys.getenv("STUDY_NAME")
+family_based_study = Sys.getenv("FAMILY_BASED_STUDY")
 
 input_file = Sys.getenv("INPUT_FILE")
 input_file_delimiter = Sys.getenv("INPUT_FILE_DELIMITER")
@@ -45,6 +46,8 @@ lod_urinary_albumin = Sys.getenv("LOD_URINARY_ALBUMIN")
 ### CHECK PARAMS
 
 mandatory_params = c(
+  "study_name",
+  "family_based_study",
   "input_file",
   "input_file_delimiter",
   "error_file",
@@ -115,15 +118,14 @@ column_uric_acid_serum = Sys.getenv("COLUMN_URIC_ACID_SERUM")
 column_hypertension = Sys.getenv("COLUMN_HYPERTENSION")
 column_diabetes = Sys.getenv("COLUMN_DIABETES")
 column_gout = Sys.getenv("COLUMN_GOUT")
-column_creatinine_serum_second = Sys.getenv("COLUMN_CREATININE_SERUM_SECOND")
-column_creatinine_measurement_distance = Sys.getenv("COLUMN_CREATININE_MEASUREMENT_DISTANCE")
+column_creatinine_serum_followup = Sys.getenv("COLUMN_CREATININE_SERUM_FOLLOWUP")
+column_followup_age = Sys.getenv("COLUMN_FOLLOWUP_AGE")
 
 mandatory_columns = c(
   "column_individual_id",
   "column_age",
   "column_sex_male",
   "column_race_black",
-  "column_hypertension",
   "column_diabetes"
 )
 
@@ -136,8 +138,9 @@ optional_columns = c(
   "column_uacr",
   "column_bun_serum",
   "column_urea_serum",
-  "column_creatinine_serum_second",
-  "column_creatinine_measurement_distance",
+  "column_creatinine_serum_followup",
+  "column_followup_age",
+  "column_hypertension",
   "column_gout"
 )
 
@@ -313,8 +316,9 @@ if (urate_unit == "0") {
 }
 
 if (creatinine_serum_unit == "0") {
-  print("Convert serum creatinine from umol/l to mg/dl")
+  print("Convert serum creatinine (baseline and follow-up, if applicable) from umol/l to mg/dl")
   output$creatinine_serum = output$creatinine_serum / 88.4
+  output$creatinine_serum_followup = output$creatinine_serum_followup / 88.4
 }
 
 if (creatinine_urinary_unit == "0") {
@@ -330,6 +334,7 @@ uacr_non_missing_count = length(which(!is.na(output$uacr)))
 if (uacr_non_missing_count == 0) {
   print("Calculating UACR")
   # TODO maybe enhance UACR calculation using Cristian's code
+  # TODO deal with LOD issues
   output$uacr = output$albumin_urinary / output$creatinine_urinary * 100
 } else {
   print("Do not calculate UACR because there are precalculated values available.")
@@ -371,6 +376,35 @@ output[uacr_medium, "microalbuminuria"] = NA
 
 # calculate longitudinal phenotypes
 # TODO to be done
+
+# stratify
+output$egfr_nondm = ifelse(output$diabetes == "1", NA, output$egfr_ckdepi_creat_or_cys)
+output$egfr_dm = ifelse(output$diabetes == "1", output$egfr_ckdepi_creat_or_cys, NA)
+
+output$ckd_nondm = ifelse(output$diabetes == "1", NA, output$ckd)
+output$ckd_dm = ifelse(output$diabetes == "1", output$ckd, NA)
+
+output$gout_male = ifelse(output$sex_male == "1", output$gout, NA)
+output$gout_female = ifelse(output$sex_male == "1", NA, output$gout)
+
+output$uric_acid_serum_male = ifelse(output$sex_male == "1", output$uric_acid_serum, NA)
+output$uric_acid_serum_female = ifelse(output$sex_male == "1", NA, output$uric_acid_serum)
+
+# log-transform eGFR, urate
+output$lnegfr_overall = log(output$egfr_ckdepi_creat_or_cys, base=exp(1))
+output$lnegfr_nondm = log(output$egfr_nondm, base=exp(1))
+output$lnegfr_dm = log(output$egfr_dm, base=exp(1))
+
+output$lnuacid_overall = log(output$uric_acid_serum, base=exp(1))
+output$lnuacid_male = log(output$uric_acid_serum_male, base=exp(1))
+output$lnuacid_female = log(output$uric_acid_serum_female, base=exp(1))
+
+# make GWAS phenotype output file with less columns
+if (family_based_study == "1") {
+  # TODO columns: xxxxx
+} else {
+  # TODO columns: yyyyy
+}
 
 ### CONSISTENCY CHECKS ON VARIABLES
 
@@ -505,8 +539,8 @@ check_median_by_range("uacr", 0, 200)
 check_median_by_range("bun_serum", 10, 500)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 check_median_by_range("egfr_ckdepi_cys", 0, 200)
-check_median_by_range("creatinine_serum_secondary", 0.5, 2.5)
-check_median_by_range("creatinine_measurement_distance", 0, 10)
+check_median_by_range("creatinine_serum_followup", 0.5, 2.5)
+check_median_by_range("followup_age", 1, 100)
 
 check_categorial("sex_male", c(0, 1))
 check_categorial("race_black", c(0, 1))
@@ -536,7 +570,11 @@ categorial_variables = c(
   "diabetes", 
   "gout",
   "ckd",
-  "microalbuminuria"
+  "microalbuminuria",
+  "ckd_nondm",
+  "ckd_dm",
+  "gout_male",
+  "gout_female"
   # TODO add longitudinal traits
 )
 
@@ -560,9 +598,9 @@ for (categorial_variable in categorial_variables) {
 # quantitative plots
 quantitative_variables = c(
   "age",
+  "followup_age",
   "creatinine_serum",
-  "creatinine_serum_secondary",
-  "creatinine_measurement_distance",
+  "creatinine_serum_followup",
   "cystatinc_serum",
   "albumin_urinary",
   "creatinine_urinary",
@@ -570,7 +608,17 @@ quantitative_variables = c(
   "uacr",
   "bun_serum",
   "egfr_ckdepi_creat",
-  "egfr_ckdepi_cys"
+  "egfr_ckdepi_cys",
+  "egfr_nondm",
+  "egfr_dm",
+  "uric_acid_serum_female",
+  "uric_acid_serum_male",
+  "lnegfr_overall",
+  "lnegfr_nondm",
+  "lnegfr_dm",
+  "lnuacid_overall",
+  "lnuacid_female",
+  "lnuacid_male"
   # TODO add longitudinal traits
 )
 
@@ -615,7 +663,7 @@ for (variable in quantitative_variables) {
   yfit = dnorm(xfit, 
                mean = mean(output[, variable], na.rm = TRUE), 
                sd = sd(output[, variable], na.rm = TRUE))
-  yfit = yfit * diff(histogram$mids[1:2]) * length(output[, variable])
+  yfit = yfit * diff(histogram$mids[1:2]) * length(which(!is.na(output[, variable])))
   lines(xfit, yfit, col="blue", lwd = 2) 
 
   # density plot

@@ -9,6 +9,8 @@ set -a
 # Name of your study
 STUDY_NAME="GCKD"
 
+# Family-based study (1) or normal study (0)
+FAMILY_BASED_STUDY="0"
 
 #####################################################################
 ### INPUT AND OUTPUT FILES
@@ -64,7 +66,7 @@ COLUMN_INDIVIDUAL_ID="iid"
 ### PATIENT DEMOGRAPHICS
 ###------------------------------------------------------------------
 
-# Patient age (years)
+# Patient age (years) at baseline
 COLUMN_AGE="age"
 
 # Patient sex (1 = male, 0 = female)
@@ -134,11 +136,11 @@ COLUMN_GOUT="gout"
 # Column name with second serum creatinine measurement
 # Option (leave empty if you don't have serial creatinines)
 # Unit: see CREATININE_SERUM_UNIT
-COLUMN_CREATININE_SERUM_SECOND=""
+COLUMN_CREATININE_SERUM_FOLLOWUP=""
 
 # Column name for the distance (years) between creatinine measurements
 # Optional (but must be given if you set COLUMN_CREATININE_SERUM_SECOND)
-COLUMN_CREATININE_MEASUREMENT_DISTANCE=""
+COLUMN_FOLLOWUP_AGE=""
 
 #####################################################################
 ### STUDY PARAMETERS

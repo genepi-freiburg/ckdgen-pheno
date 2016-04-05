@@ -2,7 +2,3 @@ TODO
 
 - residual generation (if necessary)
 - maybe remove UACR input column
-- flag "family-based"
-- even more optional columns
-- output GFR DM/non-DM stratified
-- uric_acid / gout sex-stratified
