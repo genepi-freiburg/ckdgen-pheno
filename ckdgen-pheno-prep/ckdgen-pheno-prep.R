@@ -85,7 +85,7 @@ print("All mandatory parameters are present.")
 print(paste("Reading input file:", input_file))
 
 if (input_file_delimiter == "AUTO") {
-  data = try(read.table(input_file, header = TRUE, na.strings = c("NA", ".")))
+  data = try(read.table(input_file, header = TRUE, na.strings = c("NA", ".", "-9", "-99", "-999")))
 } else {
   if (input_file_delimiter == "TAB") {
     separator = "\t"
@@ -190,7 +190,7 @@ for (mandatory_column in mandatory_columns) {
 
 if (column_bun_serum == "" &&
     column_urea_serum == "") {
-  print(paste("Either BUN or UREA column name should be given."))
+  print(paste("Either BUN or UREA column name should be given if available."))
   error = data.frame(severity = "WARNING", 
                      line_number = NA, 
                      message = "BUN or UREA column name missing",
