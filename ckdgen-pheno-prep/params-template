@@ -153,6 +153,7 @@ JAFFE_BLOOD="0"
 # year of Jaffe assay; please ask your lab
 # rationale: if the assay was acquired prior to 2009, creatinine needs
 # to be adjusted
+# only need to specify this parameter if JAFFE_BLOOD is "1"
 # format: YYYY
 JAFFE_YEAR="2012"
 
