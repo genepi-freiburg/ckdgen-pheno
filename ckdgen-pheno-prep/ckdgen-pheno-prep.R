@@ -1,3 +1,13 @@
+### SOURCE FUNCTIONS FILE
+initial_options = commandArgs(trailingOnly = FALSE)
+file_arg_name = "--file="
+script_name = sub(file_arg_name, "", initial_options[grep(file_arg_name, initial_options)])
+script_basename = dirname(script_name)
+
+functions_script_name <- paste(script_basename, "ckdgen-pheno-prep-functions.R", sep = "/")
+print(paste("Sourcing '", functions_script_name , "' from '", script_name, "'. Script base directory: '", script_basename, "'.", sep = ""))
+source(functions_script_name)
+
 ### REQUIRE NEPHRO LIBRARY
 
 nephro = try(library("nephro"))
@@ -239,7 +249,7 @@ if (nrow(errors) > 0) {
   write.table(errors, error_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
   stop(paste("There are errors such as missing columns.",
              "Please check the error file and the logs.",
-             "Either adjust the column names or your input file.", sep="\n"))
+             "Either adjust the column names or your input file.", sep = "\n"))
 }
 
 
@@ -377,155 +387,128 @@ output[uacr_medium, "microalbuminuria"] = NA
 # calculate longitudinal phenotypes
 # TODO to be done
 
-# stratify
-output$egfr_nondm = ifelse(output$diabetes == "1", NA, output$egfr_ckdepi_creat_or_cys)
-output$egfr_dm = ifelse(output$diabetes == "1", output$egfr_ckdepi_creat_or_cys, NA)
+# stratify creatinine, eGFR, CKD, gout, uric acid
+output$creat_nondm = ifelse(output$diabetes == "1", NA, output$creatinine_serum)
+output$creat_dm = ifelse(output$diabetes == "1", output$creatinine_serum, NA)
+
+output$egfr_ckdepi_creat_nondm = ifelse(output$diabetes == "1", NA, output$egfr_ckdepi_creat)
+output$egfr_ckdepi_creat_dm = ifelse(output$diabetes == "1", output$egfr_ckdepi_creat, NA)
+
+output$egfr_ckdepi_cys_nondm = ifelse(output$diabetes == "1", NA, output$egfr_ckdepi_cys)
+output$egfr_ckdepi_cys_dm = ifelse(output$diabetes == "1", output$egfr_ckdepi_cys, NA)
 
 output$ckd_nondm = ifelse(output$diabetes == "1", NA, output$ckd)
 output$ckd_dm = ifelse(output$diabetes == "1", output$ckd, NA)
 
-output$gout_male = ifelse(output$sex_male == "1", output$gout, NA)
-output$gout_female = ifelse(output$sex_male == "1", NA, output$gout)
+output$bun_serum_nondm = ifelse(output$diabetes == "1", NA, output$bun_serum)
+output$bun_serum_dm = ifelse(output$diabetes == "1", output$bun_serum, NA)
+
+output$uacr_nondm = ifelse(output$diabetes == "1", NA, output$uacr)
+output$uacr_dm = ifelse(output$diabetes == "1", output$uacr, NA)
+
+output$microalbuminuria_nondm = ifelse(output$diabetes == "1", NA, output$microalbuminuria)
+output$microalbuminuria_dm = ifelse(output$diabetes == "1", output$microalbuminuria, NA)
 
 output$uric_acid_serum_male = ifelse(output$sex_male == "1", output$uric_acid_serum, NA)
 output$uric_acid_serum_female = ifelse(output$sex_male == "1", NA, output$uric_acid_serum)
 
-# log-transform eGFR, urate
-output$lnegfr_overall = log(output$egfr_ckdepi_creat_or_cys, base=exp(1))
-output$lnegfr_nondm = log(output$egfr_nondm, base=exp(1))
-output$lnegfr_dm = log(output$egfr_dm, base=exp(1))
+output$gout_male = ifelse(output$sex_male == "1", output$gout, NA)
+output$gout_female = ifelse(output$sex_male == "1", NA, output$gout)
 
-output$lnuacid_overall = log(output$uric_acid_serum, base=exp(1))
-output$lnuacid_male = log(output$uric_acid_serum_male, base=exp(1))
-output$lnuacid_female = log(output$uric_acid_serum_female, base=exp(1))
+# TODO stratify longitudinal parameters
+
+# log-transform and calculate residuals for: creatinine, cystatin C, BUN, eGFR, UACR
+ln_transform_variables = c(
+  "creatinine_serum",
+  "creat_nondm",
+  "creat_dm",
+  
+  "cystatinc_serum",
+  
+  "bun_serum",
+  "bun_serum_nondm",
+  "bun_serum_dm",
+  
+  "uacr",
+  "uacr_nondm",
+  "uacr_dm",
+  
+  "egfr_ckdepi_creat",
+  "egfr_ckdepi_creat_nondm",
+  "egfr_ckdepi_creat_dm",
+  
+  "egfr_ckdepi_cys",
+  "egfr_ckdepi_cys_nondm",
+  "egfr_ckdepi_cys_dm",
+   
+  "creatinine_serum_followup" # TODO dm, non_dm?
+  # TODO transform longitudinal parameters
+)
+
+# calculate residuals (and not log-transform): uric acid
+only_residuals_variables = c(  
+  "uric_acid_serum",
+  "uric_acid_serum_female",
+  "uric_acid_serum_male"
+)
+
+# log-tranform and calculate residuals
+for (transform_variable in ln_transform_variables) {
+  print(paste("Log-transforming '", transform_variable, "' and calculating residuals.", sep = ""))
+  
+  # log-transform variable
+  ln_transform_variable = paste("ln_", transform_variable, sep = "")
+  output[, ln_transform_variable] = log(output[, transform_variable], base=exp(1))
+
+  # calculate residuals
+  missingness = calc_missingness(ln_transform_variable)
+  if (missingness < 1.0) {
+    residual_values = residuals(lm(output[, ln_transform_variable] ~ output$age + output$sex, na.action="na.exclude"))
+  } else {
+    residual_values = NA
+    print(paste("Unable to calculate residuals because of missing data for '", ln_transform_variable, "'.", sep = ""))
+  }
+
+  residual_variable = paste(ln_transform_variable, "_residuals", sep = "")
+  output[, residual_variable] = residual_values
+}
+
+# calculate residuals for non-logarithmic variables
+for (transform_variable in only_residuals_variables) {
+  print(paste("Calculating residuals for '", transform_variable, "'.", sep = ""))
+  
+  # calculate residuals
+  missingness = calc_missingness(transform_variable)
+  if (missingness < 1.0) {
+    residual_values = residuals(lm(output[, transform_variable] ~ output$age + output$sex, na.action="na.exclude"))
+  } else {
+    residual_values = NA
+    print(paste("Unable to calculate residuals because of missing data for '", transform_variable, "'.", sep = ""))
+  }
+  
+  residual_variable = paste(transform_variable, "_residuals", sep = "")
+  output[, residual_variable] = residual_values
+}
 
 # make GWAS phenotype output file with less columns
 if (family_based_study == "1") {
-  # TODO columns: xxxxx
+  # need to have overall, dm, non_dm
+  # TODO
 } else {
-  # TODO columns: yyyyy
+  # need to have only dm, non_dm
+  # TODO
 }
 
 ### CONSISTENCY CHECKS ON VARIABLES
 
-check_median_by_range = function(variable_name, median_low, median_high) {
-  if (!(variable_name %in% colnames(output))) {
-    print(paste("No column for variable '", variable_name, "' in output - skip median check.",
-                sep = ""))
-  } else {
-    variable = output[, variable_name]
-    var_median = median(variable, na.rm = TRUE)
-    if (!is.na(var_median)) {
-      if (var_median < median_low || var_median > median_high) {
-        print(paste("Suspicious median for '", variable_name, "': ", var_median, 
-                    " not in [", median_low, "; ", median_high, "]", sep = ""))
-        
-        error = data.frame(severity = "WARNING", 
-                           line_number = NA, 
-                           message = "Suspicious median",
-                           param1 = variable_name,
-                           param2 = var_median)
-        
-        errors <<- rbind(errors, error)
-      }
-    } else {
-      print(paste("Unable to calculate median for '", variable_name, 
-                  "': No values available.", sep = ""))
-      
-      error = data.frame(severity = "WARNING", 
-                         line_number = NA, 
-                         message = "NA median",
-                         param1 = variable_name,
-                         param2 = var_median)
-      
-      errors <<- rbind(errors, error)
-    }
-  }
-}
-
-calc_missingness = function(variable_name) {
-  if (variable_name %in% colnames(output)) {
-    variable = output[, variable_name]
-    missings = length(which(is.na(variable)))
-    totals = nrow(output)
-    missings / totals
-  } else {
-    # everything is missing - return 1.0
-    1.0
-  }
-}
-
-check_missingness = function(variable_name) {
-  fract = calc_missingness(variable_name)
-  if (fract > 0.1) {
-    print(paste("High missingness (>10%) for '", variable_name, "': ", fract, sep = ""))
-    
-    error = data.frame(severity = "WARNING", 
-                       line_number = NA, 
-                       message = "High missingness",
-                       param1 = variable_name,
-                       param2 = fract)
-    
-    errors <<- rbind(errors, error)
-  }
-}
-
-check_categorial = function(variable_name, categories) {
-  # check that values are valid categories
-  variable = output[, variable_name]
-  invalid_lines = which(!(variable %in% categories))
-  if (length(invalid_lines)) {
-    for (line in invalid_lines) {
-      if (!is.na(variable[line])) {
-        print(paste("Invalid categorial value ", variable[line],
-                    " for '", variable_name, "' in input line ", line, sep = ""))
-        
-        error = data.frame(severity = "ERROR", 
-                           line_number = line, 
-                           message = "Invalid value",
-                           param1 = variable_name,
-                           param2 = variable[line])
-        
-        errors <<- rbind(errors, error)
-      } else {
-        # NA in one cell is ok
-        # high missingness will be caught by different function
-      }
-    }
-  }
-  
-  # check subgroup size
-  for (category in categories) {
-    category_size = length(which(variable == category))
-    if (category_size > 0 && category_size < 50) {
-      print(paste("Category ", category, " for '", variable_name, 
-                  "' only has ", category_size, 
-                  " members. Stratification will be difficult.", sep = ""))
-      
-      error = data.frame(severity = "WARNING", 
-                         line_number = NA, 
-                         message = "Small subgroup",
-                         param1 = paste(variable_name, "/", category),
-                         param2 = category_size)
-      
-      errors <<- rbind(errors, error)
-    } else if (category_size == 0) {
-      print(paste("Category ", category, " for '", variable_name, 
-                  "' not present.", sep = ""))
-      
-      error = data.frame(severity = "INFO", 
-                         line_number = NA, 
-                         message = "Category not present",
-                         param1 = variable_name,
-                         param2 = category)
-      
-      errors <<- rbind(errors, error)
-    }
-  }
-}
-
 for (variable_name in colnames(output)) {
-  check_missingness(variable_name)
+  # only check missingness in non-stratified variables
+  if (!grepl("_nondm", variable_name) &&
+      !grepl("_dm", variable_name) &&
+      !grepl("_male", variable_name) &&
+      !grepl("_female", variable_name)) {
+    check_missingness(variable_name)
+  }
 }
 
 # TODO improve ranges?
@@ -536,7 +519,7 @@ check_median_by_range("albumin_urinary", 0, 200)
 check_median_by_range("creatinine_urinary", 0, 200)
 check_median_by_range("uric_acid_serum", 2, 20)
 check_median_by_range("uacr", 0, 200)
-check_median_by_range("bun_serum", 10, 500)
+check_median_by_range("bun_serum", 10, 100)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 check_median_by_range("egfr_ckdepi_cys", 0, 200)
 check_median_by_range("creatinine_serum_followup", 0.5, 2.5)
@@ -574,7 +557,9 @@ categorial_variables = c(
   "ckd_nondm",
   "ckd_dm",
   "gout_male",
-  "gout_female"
+  "gout_female",
+  "microalbuminuria_nondm",
+  "microalbuminuria_dm"
   # TODO add longitudinal traits
 )
 
@@ -596,30 +581,17 @@ for (categorial_variable in categorial_variables) {
 }
 
 # quantitative plots
-quantitative_variables = c(
+input_variables_to_plot = c(
   "age",
-  "followup_age",
-  "creatinine_serum",
-  "creatinine_serum_followup",
-  "cystatinc_serum",
+  "followup_age",  
   "albumin_urinary",
-  "creatinine_urinary",
-  "uric_acid_serum",
-  "uacr",
-  "bun_serum",
-  "egfr_ckdepi_creat",
-  "egfr_ckdepi_cys",
-  "egfr_nondm",
-  "egfr_dm",
-  "uric_acid_serum_female",
-  "uric_acid_serum_male",
-  "lnegfr_overall",
-  "lnegfr_nondm",
-  "lnegfr_dm",
-  "lnuacid_overall",
-  "lnuacid_female",
-  "lnuacid_male"
-  # TODO add longitudinal traits
+  "creatinine_urinary"
+)
+
+quantitative_variables = c(
+  input_variables_to_plot, 
+  ln_transform_variables, 
+  only_residuals_variables
 )
 
 for (variable in quantitative_variables) {
@@ -628,7 +600,11 @@ for (variable in quantitative_variables) {
     print(paste("Skip plotting of variable '", variable, "' because of missingness.", sep = ""))
     next;
   }
+
+  non_missing_records = length(which(!is.na(output[, variable])))
+  missing_records = length(which(is.na(output[, variable])))
   
+  # 2x2 plots, leave space for page title
   par(mfrow = c(2, 2), oma = c(0, 0, 3, 0))
   
   # box plot
@@ -646,32 +622,12 @@ for (variable in quantitative_variables) {
             sep = ""
           ))
 
-  # histogram
-  non_missing_records = length(which(!is.na(output[, variable])))
-  missing_records = length(which(is.na(output[, variable])))
-  
-  histogram = hist(output[, variable], 
-                   breaks = 40, 
-                   col = "grey",
-                   main = "Histogram", 
-                   xlab = variable, 
-                   ylab = "Counts", 
-                   sub = paste(non_missing_records, " non-missing records (", missing_records, " NA)", sep = ""))
-  
-  xfit = seq(min(output[, variable], na.rm = TRUE), 
-             max(output[, variable], na.rm = TRUE), length = 40)
-  yfit = dnorm(xfit, 
-               mean = mean(output[, variable], na.rm = TRUE), 
-               sd = sd(output[, variable], na.rm = TRUE))
-  yfit = yfit * diff(histogram$mids[1:2]) * length(which(!is.na(output[, variable])))
-  lines(xfit, yfit, col="blue", lwd = 2) 
-
-  # density plot
+  # density plot of raw variable
   histogram = hist(output[, variable], 
                    breaks = 40, 
                    prob = TRUE,
                    col = "grey",
-                   main = "Density plot", 
+                   main = "No transformation", 
                    xlab = variable, 
                    ylab = "Probability", 
                    sub = paste(non_missing_records, " non-missing records (", missing_records, " NA)", sep = ""))
@@ -683,9 +639,56 @@ for (variable in quantitative_variables) {
                mean = mean(output[, variable], na.rm = TRUE), 
                sd = sd(output[, variable], na.rm = TRUE))
   lines(xfit, yfit, col="blue", lwd = 2) 
-
-  mtext(variable, outer = TRUE, cex = 1.5)
   
+  # density plot of logarithmic transformation
+  ln_variable = paste("ln_", variable, sep = "")
+  if (ln_variable %in% colnames(output)) {
+    histogram = hist(output[, ln_variable], 
+                     breaks = 40, 
+                     prob = TRUE,
+                     col = "grey",
+                     main = "Logarithmic transformation", 
+                     xlab = ln_variable, 
+                     ylab = "Probability", 
+                     sub = "")
+    lines(density(output[, ln_variable], na.rm = TRUE), col="red", lwd=2)
+    
+    xfit = seq(min(output[, ln_variable], na.rm = TRUE), 
+               max(output[, ln_variable], na.rm = TRUE), length = 40)
+    yfit = dnorm(xfit, 
+                 mean = mean(output[, ln_variable], na.rm = TRUE), 
+                 sd = sd(output[, ln_variable], na.rm = TRUE))
+    lines(xfit, yfit, col="blue", lwd = 2) 
+  }
+  
+  # plot of residuals
+  residual_variable = paste(ln_variable, "_residuals", sep = "")
+  if (!(residual_variable %in% colnames(output))) {
+    # try non-logarithmic residual
+    residual_variable = paste(variable, "_residuals", sep = "")
+  }
+  
+  if (residual_variable %in% colnames(output)) {
+    histogram = hist(output[, residual_variable], 
+                     breaks = 40, 
+                     prob = TRUE,
+                     col = "grey",
+                     main = "Residuals", 
+                     xlab = residual_variable, 
+                     ylab = "Probability", 
+                     sub = "")
+    lines(density(output[, residual_variable], na.rm = TRUE), col="red", lwd=2)
+    
+    xfit = seq(min(output[, residual_variable], na.rm = TRUE), 
+               max(output[, residual_variable], na.rm = TRUE), length = 40)
+    yfit = dnorm(xfit, 
+                 mean = mean(output[, residual_variable], na.rm = TRUE), 
+                 sd = sd(output[, residual_variable], na.rm = TRUE))
+    lines(xfit, yfit, col="blue", lwd = 2) 
+  }
+  
+  # label the page
+  mtext(variable, outer = TRUE, cex = 1.5)
 }
 
 dev.off()
