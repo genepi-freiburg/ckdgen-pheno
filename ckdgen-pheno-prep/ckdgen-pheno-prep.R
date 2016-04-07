@@ -375,7 +375,6 @@ output$egfr_ckdepi_creat_or_cys = ifelse(is.na(output$egfr_ckdepi_creat), output
 output$ckd = ifelse(output$egfr_ckdepi_creat_or_cys < 60, 1, 0)
 
 # calculate microalbuminuria
-# TODO keep values in the range [10-30]?
 output$microalbuminuria = NA
 uacr_high = which(output$uacr > 30)
 uacr_low = which(output$uacr < 10)

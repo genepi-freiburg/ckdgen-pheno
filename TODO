@@ -1,4 +1,6 @@
 TODO
 
-- residual generation (if necessary)
+- incorporate longitudinal phenotypes
+- deal with UACR LOD
 - maybe remove UACR input column
+- write proper GWAS output file (depending on "family study" flag)
