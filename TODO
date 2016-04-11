@@ -2,5 +2,6 @@ TODO
 
 - incorporate longitudinal phenotypes
 - deal with UACR LOD
-- maybe remove UACR input column
+- remove UACR input column
+- rank-based inverse normal transformation of UACR
 - write proper GWAS output file (depending on "family study" flag)
