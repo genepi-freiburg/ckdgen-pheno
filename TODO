@@ -7,3 +7,4 @@ TODO
 - write proper GWAS output file (depending on "family study" flag)
 - warn if stratum has < 100 members
 - output skewness and kurtosis with summary statistics
+- check residual calculation of uric acid: should not include sex (as we stratify)
