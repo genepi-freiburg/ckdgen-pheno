@@ -1,10 +1,6 @@
 TODO
 
 - incorporate longitudinal phenotypes
-- deal with UACR LOD
-- remove UACR input column
-- rank-based inverse normal transformation of UACR
 - write proper GWAS output file (depending on "family study" flag)
 - warn if stratum has < 100 members
 - output skewness and kurtosis with summary statistics
-- check residual calculation of uric acid: should not include sex (as we stratify)
