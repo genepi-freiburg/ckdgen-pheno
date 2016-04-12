@@ -48,7 +48,6 @@ jaffe_blood = Sys.getenv("JAFFE_BLOOD")
 jaffe_year = Sys.getenv("JAFFE_YEAR")
 creatinine_serum_unit = Sys.getenv("CREATININE_SERUM_UNIT")
 creatinine_urinary_unit = Sys.getenv("CREATININE_URINARY_UNIT")
-uacr_unit = Sys.getenv("UACR_UNIT")
 urate_unit = Sys.getenv("URATE_UNIT")
 lod_urinary_albumin = Sys.getenv("LOD_URINARY_ALBUMIN")
 
@@ -77,8 +76,16 @@ for (mandatory_param in mandatory_params) {
     stop(paste("Parameter '", mandatory_param, "' is mandatory.", sep = ""))
   }
 }
-print("All mandatory parameters are present.")
 
+if (nchar(as.character(lod_urinary_albumin)) > 0) {
+  if (lod_urinary_albumin < 1 || lod_urinary_albumin > 20) {
+    stop(paste("Limit of detection for urinary albumin out of bounds: ", lod_urinary_albumin, sep = ""))
+  }  
+} else {
+  print("WARNING: No limit of detection (LOD) given for urinary albumin.")
+}
+
+print("All mandatory parameters are present.")
 
 ### READ INPUT FILE
 
@@ -121,7 +128,6 @@ column_creatinine_serum = Sys.getenv("COLUMN_CREATININE_SERUM")
 column_cystatinc_serum = Sys.getenv("COLUMN_CYSTATINC_SERUM")
 column_creatinine_urinary = Sys.getenv("COLUMN_CREATININE_URINARY")
 column_albumin_urinary = Sys.getenv("COLUMN_ALBUMIN_URINARY")
-column_uacr = Sys.getenv("COLUMN_UACR")
 column_bun_serum = Sys.getenv("COLUMN_BUN_SERUM")
 column_urea_serum = Sys.getenv("COLUMN_UREA_SERUM")
 column_uric_acid_serum = Sys.getenv("COLUMN_URIC_ACID_SERUM")
@@ -145,7 +151,6 @@ optional_columns = c(
   "column_uric_acid_serum",
   "column_creatinine_urinary",
   "column_albumin_urinary",
-  "column_uacr",
   "column_bun_serum",
   "column_urea_serum",
   "column_creatinine_serum_followup",
@@ -315,11 +320,6 @@ if (jaffe_blood == "1") {
   }
 }
 
-if (uacr_unit == "0") {
-  print("Convert UACR from mg/mmol to mg/g")
-  output$uacr = output$uacr * 8.84
-}
-
 if (urate_unit == "0") {
   print("Convert uric acid from umol/l to mg/dl")
   output$uric_acid_serum = output$uric_acid_serum / 59.48
@@ -339,16 +339,10 @@ if (creatinine_urinary_unit == "0") {
 
 ### CALCULATE ADDITIONAL COLUMNS IN OUTPUT
 
-# calculate UACR (this code also works if albumin_urinary or creatinine_urinary is NA)
-uacr_non_missing_count = length(which(!is.na(output$uacr)))
-if (uacr_non_missing_count == 0) {
-  print("Calculating UACR")
-  # TODO maybe enhance UACR calculation using Cristian's code
-  # TODO deal with LOD issues
-  output$uacr = output$albumin_urinary / output$creatinine_urinary * 100
-} else {
-  print("Do not calculate UACR because there are precalculated values available.")
-}
+# calculate UACR
+print("Calculating UACR")
+output$albumin_urinary_lod = ifelse(output$albumin_urinary < lod_urinary_albumin, lod_urinary_albumin, output$albumin_urinary)
+output$uacr = output$albumin_urinary_lod / output$creatinine_urinary * 100
 
 # calculate eGFR (CKDEpi)
 print("Calculating eGFR creat (CKDEpi)")

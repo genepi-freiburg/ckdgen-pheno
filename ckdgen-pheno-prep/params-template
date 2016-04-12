@@ -95,11 +95,6 @@ COLUMN_CREATININE_URINARY="ucrea"
 # Optional
 COLUMN_ALBUMIN_URINARY="ualb"
 
-# UACR (Urinary albumin-creatinine ratio)
-# Unit: must be configured below
-# Optional, will be calculated if data available and no column name given
-COLUMN_UACR="uacr"
-
 # Serum BUN (blood urea nitrogen; unit: mg/dl)
 # Optional, Urea column is used if this column name is empty
 COLUMN_BUN_SERUM=""
@@ -165,16 +160,12 @@ CREATININE_SERUM_UNIT="1"
 # 0 = umol/l, 1 = mg/dl
 CREATININE_URINARY_UNIT="1"
 
-# Unit of values in the UACR column (if present)
-# 0 = mg/mmol, 1 = mg/g
-UACR_UNIT="1"
-
 # Unit of urate measurements
 # 0 = umol/l, 1 = mg/dl
 URATE_UNIT="1"
 
 # LOD (limit of detection) of urinary albumin assay.
 # Example: 10 mg/L for HemoCue® and 3 mg/L for ProSpec®
-# Unit: see ALBUMIN_URINARY_UNIT
+# Unit: mg/L
 # Optional.
 LOD_URINARY_ALBUMIN=""
