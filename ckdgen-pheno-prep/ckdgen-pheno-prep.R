@@ -410,7 +410,14 @@ output$gout_female = ifelse(output$sex_male == "1", NA, output$gout)
 
 # TODO stratify longitudinal parameters
 
-# log-transform and calculate residuals for: creatinine, cystatin C, BUN, eGFR, UACR
+# rank-based inverse normal transformation for: UACR
+qnorm_transform_variables = c(
+  "uacr",
+  "uacr_nondm",
+  "uacr_dm"
+)
+
+# log-transform and calculate residuals for: creatinine, cystatin C, BUN, eGFR
 ln_transform_variables = c(
   "creatinine_serum",
   "creat_nondm",
@@ -421,10 +428,6 @@ ln_transform_variables = c(
   "bun_serum",
   "bun_serum_nondm",
   "bun_serum_dm",
-  
-  "uacr",
-  "uacr_nondm",
-  "uacr_dm",
   
   "egfr_ckdepi_creat",
   "egfr_ckdepi_creat_nondm",
@@ -466,6 +469,28 @@ for (transform_variable in ln_transform_variables) {
   output[, residual_variable] = residual_values
 }
 
+# rank-based inverse normal-tranform and calculate residuals
+for (transform_variable in qnorm_transform_variables) {
+  print(paste("Rank-based inverse normal transforming '", transform_variable, "' and calculating residuals.", sep = ""))
+  
+  # inverse-normal transform variable
+  qnorm_transform_variable = paste("qnorm_", transform_variable, sep = "")
+  output[, qnorm_transform_variable] = 
+    qnorm((rank(output[, transform_variable], na.last="keep") - 0.5) / sum(!is.na(output[, transform_variable])))
+  
+  # calculate residuals
+  missingness = calc_missingness(qnorm_transform_variable)
+  if (missingness < 1.0) {
+    residual_values = residuals(lm(output[, qnorm_transform_variable] ~ output$age + output$sex, na.action="na.exclude"))
+  } else {
+    residual_values = NA
+    print(paste("Unable to calculate residuals because of missing data for '", qnorm_transform_variable, "'.", sep = ""))
+  }
+  
+  residual_variable = paste(qnorm_transform_variable, "_residuals", sep = "")
+  output[, residual_variable] = residual_values
+}
+
 # calculate residuals for non-logarithmic variables
 for (transform_variable in only_residuals_variables) {
   print(paste("Calculating residuals for '", transform_variable, "'.", sep = ""))
@@ -473,7 +498,13 @@ for (transform_variable in only_residuals_variables) {
   # calculate residuals
   missingness = calc_missingness(transform_variable)
   if (missingness < 1.0) {
-    residual_values = residuals(lm(output[, transform_variable] ~ output$age + output$sex, na.action="na.exclude"))
+    # if stratum is female or male, do not put sex into residuals
+    if (grepl("_male", transform_variable) || grepl("_female", transform_variable)) {
+      print(paste("Do not adjust for sex (only for age) for phenotype:", transform_variable))
+      residual_values = residuals(lm(output[, transform_variable] ~ output$age, na.action="na.exclude"))
+    } else {
+      residual_values = residuals(lm(output[, transform_variable] ~ output$age + output$sex, na.action="na.exclude"))
+    }
   } else {
     residual_values = NA
     print(paste("Unable to calculate residuals because of missing data for '", transform_variable, "'.", sep = ""))
@@ -583,7 +614,8 @@ input_variables_to_plot = c(
 
 quantitative_variables = c(
   input_variables_to_plot, 
-  ln_transform_variables, 
+  ln_transform_variables,
+  qnorm_transform_variables,
   only_residuals_variables
 )
 
@@ -654,11 +686,36 @@ for (variable in quantitative_variables) {
     lines(xfit, yfit, col="blue", lwd = 2) 
   }
   
+  # density plot of qnorm transformation
+  qnorm_variable = paste("qnorm_", variable, sep = "")
+  if (qnorm_variable %in% colnames(output)) {
+    histogram = hist(output[, qnorm_variable], 
+                     breaks = 40, 
+                     prob = TRUE,
+                     col = "grey",
+                     main = "Rank-based inverse normal transform", 
+                     xlab = qnorm_variable, 
+                     ylab = "Probability", 
+                     sub = "")
+    lines(density(output[, qnorm_variable], na.rm = TRUE), col="red", lwd=2)
+    
+    xfit = seq(min(output[, qnorm_variable], na.rm = TRUE), 
+               max(output[, qnorm_variable], na.rm = TRUE), length = 40)
+    yfit = dnorm(xfit, 
+                 mean = mean(output[, qnorm_variable], na.rm = TRUE), 
+                 sd = sd(output[, qnorm_variable], na.rm = TRUE))
+    lines(xfit, yfit, col="blue", lwd = 2) 
+  }
+  
   # plot of residuals
   residual_variable = paste(ln_variable, "_residuals", sep = "")
   if (!(residual_variable %in% colnames(output))) {
     # try non-logarithmic residual
     residual_variable = paste(variable, "_residuals", sep = "")
+  }
+  if (!(residual_variable %in% colnames(output))) {
+    # try qnormal residual
+    residual_variable = paste("qnorm_", variable, "_residuals", sep = "")
   }
   
   if (residual_variable %in% colnames(output)) {
