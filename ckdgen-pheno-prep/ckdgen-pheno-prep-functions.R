@@ -49,8 +49,8 @@ calc_missingness = function(variable_name) {
 
 check_missingness = function(variable_name) {
   fract = calc_missingness(variable_name)
-  if (fract > 0.1) {
-    print(paste("High missingness (>10%) for '", variable_name, "': ", fract, sep = ""))
+  if (fract > 0.2) {
+    print(paste("High missingness (>20%) for '", variable_name, "': ", fract, sep = ""))
     
     error = data.frame(severity = "WARNING", 
                        line_number = NA, 
