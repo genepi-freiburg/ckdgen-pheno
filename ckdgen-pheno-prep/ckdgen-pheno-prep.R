@@ -26,7 +26,6 @@ if (class(nephro) == "try-error") {
   print("Library 'nephro' loaded successfully.")
 }
 
-
 ### I/O PARAMS
 
 study_name = Sys.getenv("STUDY_NAME")
@@ -272,6 +271,12 @@ for (column in all_columns) {
     next;
   }
   
+  if (column == "column_individual_id") {
+    # no summaries for individual ID
+    print("No summary for individual ID column")
+    next;
+  }
+  
   print(paste("Summary for", column))
   summ = summary(data[, column_name])
   print(summ)
@@ -281,11 +286,13 @@ for (column in all_columns) {
     min = summ[1],
     q1 = summ[2],
     med = summ[3],
-    mean = summ[4],
-    sd = sd(data[,column_name], na.rm = T),
     q3 = summ[5],
     max = summ[6],
-    na = ifelse(is.na(summ[7]), 0, summ[7])
+    na = ifelse(is.na(summ[7]), 0, summ[7]),
+    mean = summ[4],
+    sd = sd(data[,column_name], na.rm = T),
+    kurtosis = kurtosis(data[,column_name], na.rm = T),
+    skewness = skewness(data[,column_name], na.rm = T)                
   )) 
 }
 row.names(summary_statistics) <- seq(nrow(summary_statistics))
@@ -618,6 +625,7 @@ for (variable in quantitative_variables) {
   summ = summary(output[, variable])
   boxplot(output[, variable],
           main = "Box plot", 
+          horizontal = T,
           sub = paste(
             "min: ", summ[1], 
             ", q1: ", summ[2],
@@ -628,7 +636,7 @@ for (variable in quantitative_variables) {
             ", na: ", ifelse(is.na(summ[7]), 0, summ[7]),
             sep = ""
           ))
-
+  
   # density plot of raw variable
   histogram = hist(output[, variable], 
                    breaks = 40, 
