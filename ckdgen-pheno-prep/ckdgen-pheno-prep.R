@@ -125,7 +125,6 @@ column_age = Sys.getenv("COLUMN_AGE")
 column_sex_male = Sys.getenv("COLUMN_SEX_MALE")
 column_race_black = Sys.getenv("COLUMN_RACE_BLACK")
 column_creatinine_serum = Sys.getenv("COLUMN_CREATININE_SERUM")
-column_cystatinc_serum = Sys.getenv("COLUMN_CYSTATINC_SERUM")
 column_creatinine_urinary = Sys.getenv("COLUMN_CREATININE_URINARY")
 column_albumin_urinary = Sys.getenv("COLUMN_ALBUMIN_URINARY")
 column_bun_serum = Sys.getenv("COLUMN_BUN_SERUM")
@@ -147,7 +146,6 @@ mandatory_columns = c(
 
 optional_columns = c(
   "column_creatinine_serum",
-  "column_cystatinc_serum",
   "column_uric_acid_serum",
   "column_creatinine_urinary",
   "column_albumin_urinary",
@@ -348,10 +346,6 @@ output$uacr = output$albumin_urinary_lod / output$creatinine_urinary * 100
 print("Calculating eGFR creat (CKDEpi)")
 output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, output$age, output$race_black)
 
-# calculate eGFR (CKDEpi)
-print("Calculating eGFR cys (CKDEpi)")
-output$egfr_ckdepi_cys = CKDEpi.cys(output$cystatinc_serum, output$sex_male, output$age)
-
 # calculate BUN
 bun_non_missing_count = length(which(!is.na(output$bun_serum)))
 if (bun_non_missing_count == 0) {
@@ -364,9 +358,8 @@ if (bun_non_missing_count == 0) {
 # remove urea column after calculation (keep only BUN)
 output$urea_serum = NULL 
 
-# calculate CKD (prefering eGFR_creat, using eGFR_cys if it is available and eGFR_creat not)
-output$egfr_ckdepi_creat_or_cys = ifelse(is.na(output$egfr_ckdepi_creat), output$egfr_ckdepi_cys, output$egfr_ckdepi_crea)
-output$ckd = ifelse(output$egfr_ckdepi_creat_or_cys < 60, 1, 0)
+# calculate CKD
+output$ckd = ifelse(output$egfr_ckdepi_creat < 60, 1, 0)
 
 # calculate microalbuminuria
 output$microalbuminuria = NA
@@ -386,9 +379,6 @@ output$creat_dm = ifelse(output$diabetes == "1", output$creatinine_serum, NA)
 
 output$egfr_ckdepi_creat_nondm = ifelse(output$diabetes == "1", NA, output$egfr_ckdepi_creat)
 output$egfr_ckdepi_creat_dm = ifelse(output$diabetes == "1", output$egfr_ckdepi_creat, NA)
-
-output$egfr_ckdepi_cys_nondm = ifelse(output$diabetes == "1", NA, output$egfr_ckdepi_cys)
-output$egfr_ckdepi_cys_dm = ifelse(output$diabetes == "1", output$egfr_ckdepi_cys, NA)
 
 output$ckd_nondm = ifelse(output$diabetes == "1", NA, output$ckd)
 output$ckd_dm = ifelse(output$diabetes == "1", output$ckd, NA)
@@ -417,14 +407,12 @@ qnorm_transform_variables = c(
   "uacr_dm"
 )
 
-# log-transform and calculate residuals for: creatinine, cystatin C, BUN, eGFR
+# log-transform and calculate residuals for: creatinine, BUN, eGFR
 ln_transform_variables = c(
   "creatinine_serum",
   "creat_nondm",
   "creat_dm",
-  
-  "cystatinc_serum",
-  
+    
   "bun_serum",
   "bun_serum_nondm",
   "bun_serum_dm",
@@ -432,10 +420,6 @@ ln_transform_variables = c(
   "egfr_ckdepi_creat",
   "egfr_ckdepi_creat_nondm",
   "egfr_ckdepi_creat_dm",
-  
-  "egfr_ckdepi_cys",
-  "egfr_ckdepi_cys_nondm",
-  "egfr_ckdepi_cys_dm",
    
   "creatinine_serum_followup" # TODO dm, non_dm?
   # TODO transform longitudinal parameters
@@ -538,14 +522,12 @@ for (variable_name in colnames(output)) {
 # TODO improve ranges?
 check_median_by_range("age", 1, 100)
 check_median_by_range("creatinine_serum", 0.5, 2.5)
-check_median_by_range("cystatinc_serum", 0.5, 2.5)
 check_median_by_range("albumin_urinary", 0, 200)
 check_median_by_range("creatinine_urinary", 0, 200)
 check_median_by_range("uric_acid_serum", 2, 20)
 check_median_by_range("uacr", 0, 200)
 check_median_by_range("bun_serum", 10, 100)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
-check_median_by_range("egfr_ckdepi_cys", 0, 200)
 check_median_by_range("creatinine_serum_followup", 0.5, 2.5)
 check_median_by_range("followup_age", 1, 100)
 

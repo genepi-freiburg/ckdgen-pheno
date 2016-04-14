@@ -83,10 +83,6 @@ COLUMN_RACE_BLACK="black"
 # Optional.
 COLUMN_CREATININE_SERUM="screa"
 
-# Serum cystatin C (unit: mg/l)
-# Optional.
-COLUMN_CYSTATINC_SERUM="scyst"
-
 # Urinary creatinine (unit: must be configured below)
 # Optional (if not available, cannot calculate uacr/upcr)
 COLUMN_CREATININE_URINARY="ucrea"
