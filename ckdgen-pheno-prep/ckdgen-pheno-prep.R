@@ -407,6 +407,42 @@ output$gout_female = ifelse(output$sex_male == "1", NA, output$gout)
 
 # TODO stratify longitudinal parameters
 
+# check stratum size
+stratum_columns = c(
+  "creat_nondm",
+  "creat_dm",
+  "egfr_ckdepi_creat_nondm",
+  "egfr_ckdepi_creat_dm",
+  "ckd_nondm",
+  "ckd_dm",
+  "bun_serum_nondm",
+  "bun_serum_dm",
+  "uacr_nondm",
+  "uacr_dm",
+  "microalbuminuria_nondm",
+  "microalbuminuria_dm",
+  "uric_acid_serum_male",
+  "uric_acid_serum_female",
+  "gout_male",
+  "gout_female"
+  # TODO longitudinal phenotypes
+)
+
+for (stratum_column in stratum_columns) {
+  measurement_count = length(which(!is.na(output[, stratum_column])))
+  print(paste("Got ", measurement_count, " measurements for stratum '",
+              stratum_column, "'.", sep = ""))
+  if (measurement_count < 100) {
+    error = data.frame(severity = "WARNING", 
+                       line_number = NA, 
+                       message = "Stratum size too small",
+                       param1 = stratum_column,
+                       param2 = measurement_count)
+    
+    errors <<- rbind(errors, error)
+  }
+}
+
 # rank-based inverse normal transformation for: UACR
 qnorm_transform_variables = c(
   "uacr",
