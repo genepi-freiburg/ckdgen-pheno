@@ -1,6 +1,6 @@
 TODO
 
 - incorporate longitudinal phenotypes
+- multiple "age" columns
 - write proper GWAS output file (depending on "family study" flag)
 - warn if stratum has < 100 members
-- output skewness and kurtosis with summary statistics
