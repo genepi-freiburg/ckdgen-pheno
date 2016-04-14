@@ -1,11 +1,14 @@
 ### SOURCE FUNCTIONS FILE
 initial_options = commandArgs(trailingOnly = FALSE)
 file_arg_name = "--file="
-script_name = sub(file_arg_name, "", initial_options[grep(file_arg_name, initial_options)])
+script_name = sub(file_arg_name, "", initial_options[grep(file_arg_name, 
+                                                          initial_options)])
 script_basename = dirname(script_name)
 
-functions_script_name <- paste(script_basename, "ckdgen-pheno-prep-functions.R", sep = "/")
-print(paste("Sourcing '", functions_script_name , "' from '", script_name, "'. Script base directory: '", script_basename, "'.", sep = ""))
+functions_script_name <- paste(script_basename, 
+                               "ckdgen-pheno-prep-functions.R", sep = "/")
+print(paste("Sourcing '", functions_script_name , "' from '", script_name, 
+            "'. Script base directory: '", script_basename, "'.", sep = ""))
 source(functions_script_name)
 
 ### REQUIRE NEPHRO LIBRARY
@@ -35,6 +38,7 @@ input_file = Sys.getenv("INPUT_FILE")
 input_file_delimiter = Sys.getenv("INPUT_FILE_DELIMITER")
 error_file = Sys.getenv("ERROR_FILE")
 output_file = Sys.getenv("OUTPUT_FILE")
+phenotype_file = Sys.getenv("PHENOTYPE_FILE")
 summary_output_file_txt = Sys.getenv("SUMMARY_OUTPUT_FILE_TXT")
 summary_output_file_pdf = Sys.getenv("SUMMARY_OUTPUT_FILE_PDF")
 
@@ -78,7 +82,8 @@ for (mandatory_param in mandatory_params) {
 
 if (nchar(as.character(lod_urinary_albumin)) > 0) {
   if (lod_urinary_albumin < 1 || lod_urinary_albumin > 20) {
-    stop(paste("Limit of detection for urinary albumin out of bounds: ", lod_urinary_albumin, sep = ""))
+    stop(paste("Limit of detection for urinary albumin out of bounds: ", 
+               lod_urinary_albumin, sep = ""))
   }  
 } else {
   print("WARNING: No limit of detection (LOD) given for urinary albumin.")
@@ -91,7 +96,8 @@ print("All mandatory parameters are present.")
 print(paste("Reading input file:", input_file))
 
 if (input_file_delimiter == "AUTO") {
-  data = try(read.table(input_file, header = TRUE, na.strings = c("NA", ".", "-9", "-99", "-999")))
+  data = try(read.table(input_file, header = TRUE, 
+                        na.strings = c("NA", ".", "-9", "-99", "-999")))
 } else {
   if (input_file_delimiter == "TAB") {
     separator = "\t"
@@ -104,7 +110,8 @@ if (input_file_delimiter == "AUTO") {
   } else {
     stop(paste("unknown INPUT_FILE_DELIMITER:", input_file_delimiter))
   }
-  data = try(read.table(input_file, header = TRUE, sep = separator, na.strings=c("NA", ".")))
+  data = try(read.table(input_file, header = TRUE, sep = separator, 
+                        na.strings=c("NA", ".")))
 }
 
 if (class(data) == "try-error") {
@@ -174,7 +181,8 @@ for (mandatory_column in mandatory_columns) {
     
     errors = rbind(errors, error)
   } else if (!(mandatory_column_name %in% colnames(data))) {
-    print(paste("Mandatory column missing:", mandatory_column, "/", mandatory_column_name))
+    print(paste("Mandatory column missing:", mandatory_column, "/",
+                mandatory_column_name))
     
     error = data.frame(severity = "ERROR", 
                        line_number = NA, 
@@ -184,7 +192,8 @@ for (mandatory_column in mandatory_columns) {
     
     errors = rbind(errors, error)
   } else {
-    print(paste("Found mandatory column:", mandatory_column, "/", mandatory_column_name))
+    print(paste("Found mandatory column:", mandatory_column, "/",
+                mandatory_column_name))
   }
 }
 
@@ -248,7 +257,8 @@ for (optional_column in optional_columns) {
 
 # Stop if there are errors
 if (nrow(errors) > 0) {
-  write.table(errors, error_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
+  le(errors, error_file, row.names = FALSE, col.names = TRUE, 
+              quote = TRUE, sep = ",")
   stop(paste("There are errors such as missing columns.",
              "Please check the error file and the logs.",
              "Either adjust the column names or your input file.", sep = "\n"))
@@ -267,7 +277,8 @@ for (column in all_columns) {
   column_name = get(column)
   if (column_name == "") {
     # must be optional
-    print(paste("Skipping summary statistics for", column, " - column not present"))
+    print(paste("Skipping summary statistics for", column, 
+                " - column not present"))
     next;
   }
   
@@ -293,10 +304,11 @@ for (column in all_columns) {
     sd = sd(data[,column_name], na.rm = T),
     kurtosis = kurtosis(data[,column_name], na.rm = T),
     skewness = skewness(data[,column_name], na.rm = T)                
-  )) 
+  ))
 }
 row.names(summary_statistics) <- seq(nrow(summary_statistics))
-write.table(summary_statistics, summary_output_file_txt, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
+write.table(summary_statistics, summary_output_file_txt, row.names = FALSE, 
+            col.names = TRUE, quote = TRUE, sep = ",")
 
 
 ### GENERATE OUTPUT DATA SET FROM INPUT
@@ -346,12 +358,14 @@ if (creatinine_urinary_unit == "0") {
 
 # calculate UACR
 print("Calculating UACR")
-output$albumin_urinary_lod = ifelse(output$albumin_urinary < lod_urinary_albumin, lod_urinary_albumin, output$albumin_urinary)
+output$albumin_urinary_lod = ifelse(output$albumin_urinary < lod_urinary_albumin, 
+                                    lod_urinary_albumin, output$albumin_urinary)
 output$uacr = output$albumin_urinary_lod / output$creatinine_urinary * 100
 
 # calculate eGFR (CKDEpi)
 print("Calculating eGFR creat (CKDEpi)")
-output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, output$age, output$race_black)
+output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, 
+                                        output$age, output$race_black)
 
 # calculate BUN
 bun_non_missing_count = length(which(!is.na(output$bun_serum)))
@@ -477,7 +491,8 @@ only_residuals_variables = c(
 
 # log-tranform and calculate residuals
 for (transform_variable in ln_transform_variables) {
-  print(paste("Log-transforming '", transform_variable, "' and calculating residuals.", sep = ""))
+  print(paste("Log-transforming '", transform_variable, 
+              "' and calculating residuals.", sep = ""))
   
   # log-transform variable
   ln_transform_variable = paste("ln_", transform_variable, sep = "")
@@ -543,12 +558,64 @@ for (transform_variable in only_residuals_variables) {
 
 # make GWAS phenotype output file with less columns
 if (family_based_study == "1") {
-  # need to have overall, dm, non_dm
-  # TODO
+  print("Writing output for family-based study")
+  
+  phenotype = data.frame(
+    index = output$index,
+    individual_id = output$individual_id,
+    ckd_overall = output$ckd,
+    ckd_dm = output$ckd_dm,
+    ckd_nondm = output$ckd_nondm,
+    microalbuminuria_overall = output$microalbuminuria,
+    microalbuminuria_dm = output$microalbuminuria_dm,
+    microalbuminuria_nondm = output$microalbuminuria_nondm,
+    gout_overall = output$gout,
+    gout_female = output$gout_female,
+    gout_male = output$gout_male,
+    creat_overall = output$ln_creatinine_serum_residuals,
+    creat_dm = output$ln_creat_dm_residuals,
+    creat_nondm = output$ln_creat_nondm_residuals,
+    bun_overall = output$ln_bun_serum_residuals,
+    bun_dm = output$ln_bun_serum_dm_residuals,
+    bun_nondm = output$ln_bun_serum_nondm_residuals,
+    egfr_overall = output$ln_egfr_ckdepi_creat_residuals,
+    egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
+    egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
+    uacr_overall = output$qnorm_uacr_residuals,
+    uacr_dm = output$qnorm_uacr_dm_residuals,
+    uacr_nondm = output$qnorm_uacr_nondm_residuals,
+    uric_acid_overall = output$uric_acid_serum_residuals,
+    uric_acid_female = output$uric_acid_serum_female_residuals,
+    uric_acid_male = output$uric_acid_serum_male_residuals
+    # TODO add longitudinal phenotypes
+  )
 } else {
-  # need to have only dm, non_dm
-  # TODO
+  print("Writing output for regular (non-family-based) study")
+  phenotype = data.frame(
+    index = output$index,
+    individual_id = output$individual_id,
+    ckd_dm = output$ckd_dm,
+    ckd_nondm = output$ckd_nondm,
+    microalbuminuria_dm = output$microalbuminuria_dm,
+    microalbuminuria_nondm = output$microalbuminuria_nondm,
+    gout_female = output$gout_female,
+    gout_male = output$gout_male,
+    creat_dm = output$ln_creat_dm_residuals,
+    creat_nondm = output$ln_creat_nondm_residuals,
+    bun_dm = output$ln_bun_serum_dm_residuals,
+    bun_nondm = output$ln_bun_serum_nondm_residuals,
+    egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
+    egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
+    uacr_dm = output$qnorm_uacr_dm_residuals,
+    uacr_nondm = output$qnorm_uacr_nondm_residuals,
+    uric_acid_female = output$uric_acid_serum_female_residuals,
+    uric_acid_male = output$uric_acid_serum_male_residuals
+    # TODO add longitudinal phenotypes
+  )
 }
+
+write.table(phenotype, phenotype_file, row.names = F, col.names = T, quote = F,
+            sep = "\t")
 
 ### CONSISTENCY CHECKS ON VARIABLES
 

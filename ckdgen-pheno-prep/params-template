@@ -53,6 +53,11 @@ OUTPUT_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.out.csv"
 SUMMARY_OUTPUT_FILE_TXT="ckdgen-pheno-%STUDY%-%TIMESTAMP%.summary.txt"
 SUMMARY_OUTPUT_FILE_PDF="ckdgen-pheno-%STUDY%-%TIMESTAMP%.summary.pdf"
 
+# Name (and path) of the output phenotyp file
+# Output format is tab-separated.
+# %TIMESTAMP% is replaced by a timestamp
+# %STUDY% is replaced by the study name
+PHENOTYPE_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.phenotype.txt"
 
 #####################################################################
 ### COLUMN NAMES

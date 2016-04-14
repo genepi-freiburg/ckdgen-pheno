@@ -54,6 +54,12 @@ echo "Writing output as CSV to: ${OUTPUT_FILE}" | tee -a ${LOG_FILE}
 rm -f ${OUTPUT_FILE}
 touch ${OUTPUT_FILE}
 
+PHENOTYPE_FILE=`echo ${PHENOTYPE_FILE} | sed s/%STUDY%/${STUDY_NAME}/g | sed s/%TIMESTAMP%/${TIMESTAMP}/g`
+PHENOTYPE_FILE="${OUTPUT_DIRECTORY}/${PHENOTYPE_FILE}"
+echo "Writing phenotypes as TXT to: ${PHENOTYPE_FILE}" | tee -a ${LOG_FILE}
+rm -f ${PHENOTYPE_FILE}
+touch ${PHENOTYPE_FILE}
+
 SUMMARY_OUTPUT_FILE_TXT=`echo ${SUMMARY_OUTPUT_FILE_TXT} | sed s/%STUDY%/${STUDY_NAME}/g | sed s/%TIMESTAMP%/${TIMESTAMP}/g`
 SUMMARY_OUTPUT_FILE_TXT="${OUTPUT_DIRECTORY}/${SUMMARY_OUTPUT_FILE_TXT}"
 echo "Writing summary statistics (TXT) to: ${SUMMARY_OUTPUT_FILE_TXT}"  | tee -a ${LOG_FILE}
