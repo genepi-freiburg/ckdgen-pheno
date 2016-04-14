@@ -580,8 +580,8 @@ for (categorial_variable in categorial_variables) {
   nav = length(which(is.na(output[, categorial_variable])))
   
   barplot(c(zero, one, nav),
-          names.arg = c("0 / no", "1 / yes", "not available"),
-          col = c("red", "green", "blue"),
+          names.arg = c("0 / no", "1 / yes", "NA"),
+          col = c("gray50", "gray", "gray90"),
           main = categorial_variable, 
           sub = paste(nrow(output), "records;", zero, "'0',", one, "'1',", nav, "'NA'"))
 }
