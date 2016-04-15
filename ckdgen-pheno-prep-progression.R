@@ -11,7 +11,7 @@
 ###		calc_eGFRdecline: returns a vector of length N. Calculates the continuous variable eGFRdecline as decline per annum 
 ###		calc_rapid3: returns a vector of length N. Calculates the binary variable rapid3; 1 = cases; 2 = controls 
 ### 
-###		INPUT for all functions
+###		INPUTs 
 ###		eGFRcrea_baseline: baseline eGFRcrea; vector of length N
 ###		eGFRcrea_followup: followup eGFRcrea; vector of length N
 ###		time_between_baseline_and_followup_in_years; time between baseline and followup measurement of eGFRcrea; vector of length N
@@ -22,7 +22,7 @@
 ###		Vectors CKDi, CKDI25, eGFRdecline and rapid3 are of length N 
 ###
 ###		EXAMPLE
-###		tblPhenotypes=readm.table(phenotypes.txt)  
+###		tblPhenotypes=read.table(phenotypes.txt)  
 ###		names(tblPhenotypes)
 ###		
 ###		[1] "eGFRcrea_CKDEPI_baseline"	"eGFRcrea_CKDEPI_followup"	"age_baseline"	"age_followup"
@@ -37,9 +37,9 @@
 ###		rapid3=calc_rapid3(eGFRcrea_CKDEPI_baseline,eGFRcrea_CKDEPI_followup,timeDiff)
 ###
 
+# check the input vectors
 check.decline.variables=function(a_eGFRcrea_baseline, a_eGFRcrea_followup, a_time_between_baseline_and_followup_in_years){
 
-	# define dichotomous CKDi: 1=affected; 2=unaffected
 	l_crea_baseline=length(a_eGFRcrea_baseline)
 	l_crea_followup=length(a_eGFRcrea_followup)
 	l_crea_time_diff=length(a_time_between_baseline_and_followup_in_years)
