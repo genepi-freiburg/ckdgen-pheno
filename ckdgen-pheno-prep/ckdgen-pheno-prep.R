@@ -5,11 +5,16 @@ script_name = sub(file_arg_name, "", initial_options[grep(file_arg_name,
                                                           initial_options)])
 script_basename = dirname(script_name)
 
-functions_script_name <- paste(script_basename, 
+functions_script_name = paste(script_basename, 
                                "ckdgen-pheno-prep-functions.R", sep = "/")
 print(paste("Sourcing '", functions_script_name , "' from '", script_name, 
             "'. Script base directory: '", script_basename, "'.", sep = ""))
 source(functions_script_name)
+
+progression_script_name = paste(script_basename
+				"ckdgen-pheno-prep-progression.R", sep = "/")
+print(paste("Sourcing '", progression_script_name, "'.", sep = ""))
+source(progression_script_name)
 
 ### REQUIRE NEPHRO LIBRARY
 
@@ -353,6 +358,24 @@ if (creatinine_urinary_unit == "0") {
   output$creatinine_urinary = output$creatinine_urinary / 88.4
 }
 
+have_followup_crea = length(which(!is.na(output$creatinine_serum_followup))) > 0
+have_followup_age = length(which(!is.na(output$age_followup))) > 0
+if (have_followup_crea && !have_followup_age) {
+  stop("Follow-up creatinine present, but no follow-up age.")
+} else if (have_followup_age && !have_followup_crea) {
+  stop("Follow-up age present, but no follow-up creatinine.")
+}
+have_followup_data = have_followup_crea && have_followup_age
+
+followup_crea_na = which(is.na(output$creatinine_serum_followup))
+followup_age_na = which(is.na(output$age_followup))
+if (followup_crea_na != followup_age_na) {
+  print("WARNING: Non-corresponding NA values for follow-up creatinine/age.")
+  print("NA values for follow-up eGFR will be generated for the union.")
+  print(paste("Follow-up creatinine is NA for records: ", followup_crea_na, sep = ""))
+  print(paste("Follow-up age is NA for records: ", followup_age_na, sep = ""))
+}
+
 
 ### CALCULATE ADDITIONAL COLUMNS IN OUTPUT
 
@@ -366,6 +389,16 @@ output$uacr = output$albumin_urinary_lod / output$creatinine_urinary * 100
 print("Calculating eGFR creat (CKDEpi)")
 output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, 
                                         output$age, output$race_black)
+
+# calculate eGFR (CKDEpi) on followup
+if (have_followup_data) {
+  print("Calculating eGFR creat (CKDEpi) for followup")
+  output$egfr_ckdepi_followup = CKDEpi.creat(output$creatinine_serum_followup, output$sex_male,
+                                        output$age_followup, output$race_black)
+} else {
+  print("No followup creatinine available.")
+  output$egfr_ckdepi_followup = NA
+}
 
 # calculate BUN
 bun_non_missing_count = length(which(!is.na(output$bun_serum)))
@@ -392,7 +425,15 @@ output[uacr_low, "microalbuminuria"] = 0
 output[uacr_medium, "microalbuminuria"] = NA
 
 # calculate longitudinal phenotypes
-# TODO to be done
+if (have_followup_data) {
+  print("calculate longitudinal phenotypes")
+  time_diff = output$age_followup - output$age_baseline
+  check.decline.variables(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
+  output$ckdi = calc_CKDi(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
+  output$ckdi25 = calc_CKDi25(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
+  output$egfr_decline = calc_eGFRdecline(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
+  output$rapid3 = calc_rapid3(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
+}
 
 # stratify creatinine, eGFR, CKD, gout, uric acid
 output$creat_nondm = ifelse(output$diabetes == "1", NA, output$creatinine_serum)
