@@ -1,4 +1,5 @@
 TODO
 
 - incorporate longitudinal phenotypes
-- multiple "age" columns
+- multiple "age" columns / check for consistency (baseline < followup)
+- adjust overall for diabetes 
