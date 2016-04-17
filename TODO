@@ -1,5 +1,6 @@
 TODO
 
-- incorporate longitudinal phenotypes
 - multiple "age" columns / check for consistency (baseline < followup)
 - adjust overall for diabetes 
+- UACR adjustment
+- test with followup data
