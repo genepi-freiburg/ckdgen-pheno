@@ -458,7 +458,7 @@ for (stratum_column in stratum_columns) {
 }
 
 # rank-based inverse normal transformation for: UACR
-qnorm_transform_variables = c(
+invnorm_transform_variables = c(
   "uacr",
   "uacr_nondm",
   "uacr_dm"
@@ -512,24 +512,24 @@ for (transform_variable in ln_transform_variables) {
 }
 
 # rank-based inverse normal-tranform and calculate residuals
-for (transform_variable in qnorm_transform_variables) {
+for (transform_variable in invnorm_transform_variables) {
   print(paste("Rank-based inverse normal transforming '", transform_variable, "' and calculating residuals.", sep = ""))
   
   # inverse-normal transform variable
-  qnorm_transform_variable = paste("qnorm_", transform_variable, sep = "")
-  output[, qnorm_transform_variable] = 
+  invnorm_transform_variable = paste("invnorm_", transform_variable, sep = "")
+  output[, invnorm_transform_variable] = 
     qnorm((rank(output[, transform_variable], na.last="keep") - 0.5) / sum(!is.na(output[, transform_variable])))
   
   # calculate residuals
-  missingness = calc_missingness(qnorm_transform_variable)
+  missingness = calc_missingness(invnorm_transform_variable)
   if (missingness < 1.0) {
-    residual_values = residuals(lm(output[, qnorm_transform_variable] ~ output$age + output$sex, na.action="na.exclude"))
+    residual_values = residuals(lm(output[, invnorm_transform_variable] ~ output$age + output$sex, na.action="na.exclude"))
   } else {
     residual_values = NA
-    print(paste("Unable to calculate residuals because of missing data for '", qnorm_transform_variable, "'.", sep = ""))
+    print(paste("Unable to calculate residuals because of missing data for '", invnorm_transform_variable, "'.", sep = ""))
   }
   
-  residual_variable = paste(qnorm_transform_variable, "_residuals", sep = "")
+  residual_variable = paste(invnorm_transform_variable, "_residuals", sep = "")
   output[, residual_variable] = residual_values
 }
 
@@ -581,9 +581,9 @@ if (family_based_study == "1") {
     egfr_overall = output$ln_egfr_ckdepi_creat_residuals,
     egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
     egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
-    uacr_overall = output$qnorm_uacr_residuals,
-    uacr_dm = output$qnorm_uacr_dm_residuals,
-    uacr_nondm = output$qnorm_uacr_nondm_residuals,
+    uacr_overall = output$invnorm_uacr_residuals,
+    uacr_dm = output$invnorm_uacr_dm_residuals,
+    uacr_nondm = output$invnorm_uacr_nondm_residuals,
     uric_acid_overall = output$uric_acid_serum_residuals,
     uric_acid_female = output$uric_acid_serum_female_residuals,
     uric_acid_male = output$uric_acid_serum_male_residuals
@@ -606,8 +606,8 @@ if (family_based_study == "1") {
     bun_nondm = output$ln_bun_serum_nondm_residuals,
     egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
     egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
-    uacr_dm = output$qnorm_uacr_dm_residuals,
-    uacr_nondm = output$qnorm_uacr_nondm_residuals,
+    uacr_dm = output$invnorm_uacr_dm_residuals,
+    uacr_nondm = output$invnorm_uacr_nondm_residuals,
     uric_acid_female = output$uric_acid_serum_female_residuals,
     uric_acid_male = output$uric_acid_serum_male_residuals
     # TODO add longitudinal phenotypes
@@ -707,7 +707,7 @@ input_variables_to_plot = c(
 quantitative_variables = c(
   input_variables_to_plot, 
   ln_transform_variables,
-  qnorm_transform_variables,
+  invnorm_transform_variables,
   only_residuals_variables
 )
 
@@ -779,24 +779,24 @@ for (variable in quantitative_variables) {
     lines(xfit, yfit, col="blue", lwd = 2) 
   }
   
-  # density plot of qnorm transformation
-  qnorm_variable = paste("qnorm_", variable, sep = "")
-  if (qnorm_variable %in% colnames(output)) {
-    histogram = hist(output[, qnorm_variable], 
+  # density plot of invnorm transformation
+  invnorm_variable = paste("invnorm_", variable, sep = "")
+  if (invnorm_variable %in% colnames(output)) {
+    histogram = hist(output[, invnorm_variable], 
                      breaks = 40, 
                      prob = TRUE,
                      col = "grey",
                      main = "Rank-based inverse normal transform", 
-                     xlab = qnorm_variable, 
+                     xlab = invnorm_variable, 
                      ylab = "Probability", 
                      sub = "")
-    lines(density(output[, qnorm_variable], na.rm = TRUE), col="red", lwd=2)
+    lines(density(output[, invnorm_variable], na.rm = TRUE), col="red", lwd=2)
     
-    xfit = seq(min(output[, qnorm_variable], na.rm = TRUE), 
-               max(output[, qnorm_variable], na.rm = TRUE), length = 40)
+    xfit = seq(min(output[, invnorm_variable], na.rm = TRUE), 
+               max(output[, invnorm_variable], na.rm = TRUE), length = 40)
     yfit = dnorm(xfit, 
-                 mean = mean(output[, qnorm_variable], na.rm = TRUE), 
-                 sd = sd(output[, qnorm_variable], na.rm = TRUE))
+                 mean = mean(output[, invnorm_variable], na.rm = TRUE), 
+                 sd = sd(output[, invnorm_variable], na.rm = TRUE))
     lines(xfit, yfit, col="blue", lwd = 2) 
   }
   
@@ -807,8 +807,8 @@ for (variable in quantitative_variables) {
     residual_variable = paste(variable, "_residuals", sep = "")
   }
   if (!(residual_variable %in% colnames(output))) {
-    # try qnormal residual
-    residual_variable = paste("qnorm_", variable, "_residuals", sep = "")
+    # try invnormal residual
+    residual_variable = paste("invnorm_", variable, "_residuals", sep = "")
   }
   
   if (residual_variable %in% colnames(output)) {
