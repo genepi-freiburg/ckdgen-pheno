@@ -529,7 +529,7 @@ for (stratum_column in stratum_columns) {
   }
 }
 
-# rank-based inverse normal transformation for: UACR
+# rank-based inverse normal transformation for: log UACR
 invnorm_transform_variables = c(
   "uacr",
   "uacr_nondm",
@@ -549,9 +549,17 @@ ln_transform_variables = c(
   "egfr_ckdepi_creat",
   "egfr_ckdepi_creat_nondm",
   "egfr_ckdepi_creat_dm"
-   
-  # TODO transform egfr_decline, egfr_decline_nondm, egfr_decline_dm
 )
+
+if (have_followup_data) {
+  # TODO is this correct?
+  ln_transform_variables = c(
+    ln_transform_variables,
+    "egfr_decline",
+    "egfr_decline_nondm",
+    "egfr_decline_dm"
+  )
+}
 
 # calculate residuals (and not log-transform): uric acid
 only_residuals_variables = c(  
@@ -561,6 +569,7 @@ only_residuals_variables = c(
 )
 
 # log-tranform and calculate residuals
+# (crea, egfr, BUN, egfr_decline; +/- DM)
 for (transform_variable in ln_transform_variables) {
   print(paste("Log-transforming '", transform_variable, 
               "' and calculating residuals.", sep = ""))
@@ -583,29 +592,36 @@ for (transform_variable in ln_transform_variables) {
 }
 
 # rank-based inverse normal-tranform and calculate residuals
-# TODO UACR trait transformation unclear: log(UACR) -> residuals -> invnorm?
+# (uacr, uacr_nondm, uacr_dm)
+# UACR trait transformation: log(UACR) -> residuals -> invnorm
 for (transform_variable in invnorm_transform_variables) {
-  print(paste("Rank-based inverse normal transforming '", transform_variable, "' and calculating residuals.", sep = ""))
-  
-  # inverse-normal transform variable
-  invnorm_transform_variable = paste("invnorm_", transform_variable, sep = "")
-  output[, invnorm_transform_variable] = 
-    qnorm((rank(output[, transform_variable], na.last="keep") - 0.5) / sum(!is.na(output[, transform_variable])))
+  print(paste("Calculate residuals of 'log(", transform_variable, ")' and perform rank-based inverse normal transformation.", sep = ""))
+
+  # variable names
+  log_variable = paste("log_", transform_variable, sep = "")
+  residual_variable = paste(log_variable, "_residuals", sep = "")
+  invnorm_transform_variable = paste("invnorm_", residual_variable, sep = "")
+
+  # log-transform
+  output[, log_variable] = log(output[, transform_variable])
   
   # calculate residuals
-  missingness = calc_missingness(invnorm_transform_variable)
+  missingness = calc_missingness(log_variable)
   if (missingness < 1.0) {
-    residual_values = residuals(lm(output[, invnorm_transform_variable] ~ output$age + output$sex, na.action="na.exclude"))
+    residual_values = residuals(lm(output[, log_variable] ~ output$age + output$sex, na.action="na.exclude"))
+    output[, residual_variable] = residual_values
+
+    # inverse-normal transform residuals
+    output[, invnorm_transform_variable] = qnorm((rank(residual_values, na.last="keep") - 0.5) / sum(!is.na(residual_values)))
   } else {
-    residual_values = NA
     print(paste("Unable to calculate residuals because of missing data for '", invnorm_transform_variable, "'.", sep = ""))
+    output[, residual_variable] = NA
+    output[, invnorm_transform_variable] = NA
   }
-  
-  residual_variable = paste(invnorm_transform_variable, "_residuals", sep = "")
-  output[, residual_variable] = residual_values
 }
 
 # calculate residuals for non-logarithmic variables
+# (uric_acid_serum, uric_acid_serum_male, uric_acid_serum_female)
 for (transform_variable in only_residuals_variables) {
   print(paste("Calculating residuals for '", transform_variable, "'.", sep = ""))
   
@@ -653,9 +669,9 @@ if (family_based_study == "1") {
     egfr_overall = output$ln_egfr_ckdepi_creat_residuals,
     egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
     egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
-    uacr_overall = output$invnorm_uacr_residuals,
-    uacr_dm = output$invnorm_uacr_dm_residuals,
-    uacr_nondm = output$invnorm_uacr_nondm_residuals,
+    uacr_overall = output$invnorm_log_uacr_residuals,
+    uacr_dm = output$invnorm_log_uacr_dm_residuals,
+    uacr_nondm = output$invnorm_log_uacr_nondm_residuals,
     uric_acid_overall = output$uric_acid_serum_residuals,
     uric_acid_female = output$uric_acid_serum_female_residuals,
     uric_acid_male = output$uric_acid_serum_male_residuals
@@ -692,8 +708,8 @@ if (family_based_study == "1") {
     bun_nondm = output$ln_bun_serum_nondm_residuals,
     egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
     egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
-    uacr_dm = output$invnorm_uacr_dm_residuals,
-    uacr_nondm = output$invnorm_uacr_nondm_residuals,
+    uacr_dm = output$invnorm_log_uacr_dm_residuals,
+    uacr_nondm = output$invnorm_log_uacr_nondm_residuals,
     uric_acid_female = output$uric_acid_serum_female_residuals,
     uric_acid_male = output$uric_acid_serum_male_residuals
   )
@@ -889,13 +905,13 @@ for (variable in quantitative_variables) {
   }
   
   # density plot of invnorm transformation
-  invnorm_variable = paste("invnorm_", variable, sep = "")
+  invnorm_variable = paste("log_", variable, "_residuals", sep = "")
   if (invnorm_variable %in% colnames(output)) {
     histogram = hist(output[, invnorm_variable], 
                      breaks = 40, 
                      prob = TRUE,
                      col = "grey",
-                     main = "Rank-based inverse normal transform", 
+                     main = "Transformed phenotype", 
                      xlab = invnorm_variable, 
                      ylab = "Probability", 
                      sub = "")
@@ -917,7 +933,7 @@ for (variable in quantitative_variables) {
   }
   if (!(residual_variable %in% colnames(output))) {
     # try invnormal residual
-    residual_variable = paste("invnorm_", variable, "_residuals", sep = "")
+    residual_variable = paste("invnorm_log_", variable, "_residuals", sep = "")
   }
   
   if (residual_variable %in% colnames(output)) {
@@ -925,7 +941,7 @@ for (variable in quantitative_variables) {
                      breaks = 40, 
                      prob = TRUE,
                      col = "grey",
-                     main = "Residuals", 
+                     main = "Final phenotype", 
                      xlab = residual_variable, 
                      ylab = "Probability", 
                      sub = "")
