@@ -1,6 +1,5 @@
 TODO
 
-- multiple "age" columns / check for consistency (baseline < followup)
-- adjust overall for diabetes 
-- UACR adjustment
+- add multiple "age" columns / check for consistency (baseline < followup)
+- maybe adjust for diabetes 
 - test with followup data
