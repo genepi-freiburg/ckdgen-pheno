@@ -11,7 +11,7 @@ print(paste("Sourcing '", functions_script_name , "' from '", script_name,
             "'. Script base directory: '", script_basename, "'.", sep = ""))
 source(functions_script_name)
 
-progression_script_name = paste(script_basename
+progression_script_name = paste(script_basename,
 				"ckdgen-pheno-prep-progression.R", sep = "/")
 print(paste("Sourcing '", progression_script_name, "'.", sep = ""))
 source(progression_script_name)
@@ -359,17 +359,24 @@ if (creatinine_urinary_unit == "0") {
 }
 
 have_followup_crea = length(which(!is.na(output$creatinine_serum_followup))) > 0
-have_followup_age = length(which(!is.na(output$age_followup))) > 0
+have_followup_age = length(which(!is.na(output$followup_age))) > 0
 if (have_followup_crea && !have_followup_age) {
   stop("Follow-up creatinine present, but no follow-up age.")
 } else if (have_followup_age && !have_followup_crea) {
   stop("Follow-up age present, but no follow-up creatinine.")
 }
+
 have_followup_data = have_followup_crea && have_followup_age
+if (have_followup_data) {
+  print("Follow-up data available.")
+} else {
+  print("No follow-up data available.")
+}
 
 followup_crea_na = which(is.na(output$creatinine_serum_followup))
-followup_age_na = which(is.na(output$age_followup))
-if (followup_crea_na != followup_age_na) {
+followup_age_na = which(is.na(output$followup_age))
+if (length(which(followup_crea_na != followup_age_na)) > 0 || 
+    length(followup_crea_na) != length(followup_age_na)) {
   print("WARNING: Non-corresponding NA values for follow-up creatinine/age.")
   print("NA values for follow-up eGFR will be generated for the union.")
   print(paste("Follow-up creatinine is NA for records: ", followup_crea_na, sep = ""))
@@ -460,7 +467,20 @@ output$uric_acid_serum_female = ifelse(output$sex_male == "1", NA, output$uric_a
 output$gout_male = ifelse(output$sex_male == "1", output$gout, NA)
 output$gout_female = ifelse(output$sex_male == "1", NA, output$gout)
 
-# TODO stratify longitudinal parameters
+# stratify followup data
+if (have_followup_data) {
+  output$ckdi_nondm = ifelse(output$diabetes == "1", NA, output$ckdi)
+  output$ckdi_dm = ifelse(output$diabetes == "1", output$ckdi, NA)
+
+  output$ckdi25_nondm = ifelse(output$diabetes == "1", NA, output$ckdi25)
+  output$ckdi25_dm = ifelse(output$diabetes == "1", output$ckdi25, NA)
+
+  output$egfr_decline_nondm = ifelse(output$diabetes == "1", NA, output$egfr_decline)
+  output$egfr_decline_dm = ifelse(output$diabetes == "1", output$egfr_decline, NA)
+
+  output$rapid3_nondm = ifelse(output$diabetes == "1", NA, output$rapid3)
+  output$rapid3_dm = ifelse(output$diabetes == "1", output$rapid3, NA)
+}
 
 # check stratum size
 stratum_columns = c(
@@ -480,8 +500,19 @@ stratum_columns = c(
   "uric_acid_serum_female",
   "gout_male",
   "gout_female"
-  # TODO longitudinal phenotypes
 )
+
+if (have_followup_data) {
+  stratum_columns = c(
+    stratum_columns,
+    "ckdi_nondm",
+    "ckdi_dm",
+    "ckdi25_nondm",
+    "ckdi25_dm",
+    "rapid3_nondm",
+    "rapid3_dm"
+  )
+}
 
 for (stratum_column in stratum_columns) {
   measurement_count = length(which(!is.na(output[, stratum_column])))
@@ -517,10 +548,9 @@ ln_transform_variables = c(
   
   "egfr_ckdepi_creat",
   "egfr_ckdepi_creat_nondm",
-  "egfr_ckdepi_creat_dm",
+  "egfr_ckdepi_creat_dm"
    
-  "creatinine_serum_followup" # TODO dm, non_dm?
-  # TODO transform longitudinal parameters
+  # TODO transform egfr_decline, egfr_decline_nondm, egfr_decline_dm
 )
 
 # calculate residuals (and not log-transform): uric acid
@@ -553,6 +583,7 @@ for (transform_variable in ln_transform_variables) {
 }
 
 # rank-based inverse normal-tranform and calculate residuals
+# TODO UACR trait transformation unclear: log(UACR) -> residuals -> invnorm?
 for (transform_variable in invnorm_transform_variables) {
   print(paste("Rank-based inverse normal transforming '", transform_variable, "' and calculating residuals.", sep = ""))
   
@@ -628,8 +659,22 @@ if (family_based_study == "1") {
     uric_acid_overall = output$uric_acid_serum_residuals,
     uric_acid_female = output$uric_acid_serum_female_residuals,
     uric_acid_male = output$uric_acid_serum_male_residuals
-    # TODO add longitudinal phenotypes
   )
+
+  if (have_followup_data) {
+    phenotype$ckdi_overall = output$ckdi
+    phenotype$ckdi_nondm = output$ckdi_nondm
+    phenotype$ckdi_dm = output$ckdi_dm
+    phenotype$ckdi25_overall = output$ckdi25
+    phenotype$ckdi25_nondm = output$ckdi25_nondm
+    phenotype$ckdi25_dm = output$ckdi25_dm
+    phenotype$rapid3_overall = output$rapid3
+    phenotype$rapid3_nondm = output$rapid3_nondm
+    phenotype$rapid3_dm = output$rapid3_dm
+    phenotype$egfr_decline_overall = output$egfr_decline_residuals
+    phenotype$egfr_decline_nondm = output$egfr_decline_nondm_residuals
+    phenotype$egfr_decline_dm = output$egfr_decline_dm_residuals
+  }
 } else {
   print("Writing output for regular (non-family-based) study")
   phenotype = data.frame(
@@ -651,8 +696,18 @@ if (family_based_study == "1") {
     uacr_nondm = output$invnorm_uacr_nondm_residuals,
     uric_acid_female = output$uric_acid_serum_female_residuals,
     uric_acid_male = output$uric_acid_serum_male_residuals
-    # TODO add longitudinal phenotypes
   )
+
+  if (have_followup_data) {
+    phenotype$ckdi_nondm = output$ckdi_nondm
+    phenotype$ckdi_dm = output$ckdi_dm
+    phenotype$ckdi25_nondm = output$ckdi25_nondm
+    phenotype$ckdi25_dm = output$ckdi25_dm
+    phenotype$rapid3_nondm = output$rapid3_nondm
+    phenotype$rapid3_dm = output$rapid3_dm
+    phenotype$egfr_decline_nondm = output$egfr_decline_nondm_residuals
+    phenotype$egfr_decline_dm = output$egfr_decline_dm_residuals
+  }
 }
 
 write.table(phenotype, phenotype_file, row.names = F, col.names = T, quote = F,
@@ -670,7 +725,6 @@ for (variable_name in colnames(output)) {
   }
 }
 
-# TODO improve ranges?
 check_median_by_range("age", 1, 100)
 check_median_by_range("creatinine_serum", 0.5, 2.5)
 check_median_by_range("albumin_urinary", 0, 200)
@@ -717,8 +771,22 @@ categorial_variables = c(
   "gout_female",
   "microalbuminuria_nondm",
   "microalbuminuria_dm"
-  # TODO add longitudinal traits
 )
+
+if (have_followup_data) {
+  categorial_variables = c(
+    categorial_variables,
+    "ckdi",
+    "ckdi_nondm",
+    "ckdi_dm",
+    "ckdi25",
+    "ckdi25_nondm",
+    "ckdi25_dm",
+    "rapid3",
+    "rapid3_nondm",
+    "rapid3_dm"
+  ) 
+}
 
 # bar plots
 par(mfrow = c(3, 3))
