@@ -1,5 +1,6 @@
 TODO
 
 - add multiple "age" columns / check for consistency (baseline < followup)
-- maybe adjust for diabetes 
+- maybe adjust for diabetes / stratification variable in the overall stratum
 - test with followup data
+- add age^2 term
