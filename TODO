@@ -1,3 +1,4 @@
 TODO
 
-- test with followup data
+- clarify how to transform (if at all) egfr_decline
+- do we need to have "diabetes" as a covariate for uric_acid (I don't think so)
