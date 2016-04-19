@@ -529,119 +529,99 @@ for (stratum_column in stratum_columns) {
   }
 }
 
+# apply transformations to data
+# generate data.frame with instructions how to transform
+# variable: name of the column to transform
+# formula: formula used to calculate residuals
+# transform: transformation to apply to the stratified data (ln, none)
+# postprocess: transformation to apply to the residuals (invnorm, none)
+add_transform = function (formula, transform, postprocess) {
+  formula_eval = as.formula(formula)
+  variable = all.vars(formula_eval)[1]
+  transformations <<- rbind(transformations, data.frame(
+        variable=variable, formula=formula,
+        transform=transform, postprocess=postprocess))
+}
+
+transformations = data.frame()
+
 # rank-based inverse normal transformation for: log UACR
-invnorm_transform_variables = c(
-  "uacr",
-  "uacr_nondm",
-  "uacr_dm"
-)
+add_transform("uacr ~ age + sex_male + diabetes", "ln", "invnorm")
+add_transform("uacr_nondm ~ age + sex_male", "ln", "invnorm")
+add_transform("uacr_dm ~ age + sex_male", "ln", "invnorm")
 
 # log-transform and calculate residuals for: creatinine, BUN, eGFR
-ln_transform_variables = c(
-  "creatinine_serum",
-  "creat_nondm",
-  "creat_dm",
-    
-  "bun_serum",
-  "bun_serum_nondm",
-  "bun_serum_dm",
-  
-  "egfr_ckdepi_creat",
-  "egfr_ckdepi_creat_nondm",
-  "egfr_ckdepi_creat_dm"
-)
+add_transform("creatinine_serum ~ age + sex_male + diabetes", "ln", "none")
+add_transform("creat_nondm ~ age + sex_male", "ln", "none")
+add_transform("creat_dm ~ age + sex_male", "ln", "none")
+
+add_transform("bun_serum ~ age + sex_male + diabetes", "ln", "none")
+add_transform("bun_serum_nondm ~ age + sex_male", "ln", "none")
+add_transform("bun_serum_dm ~ age + sex_male", "ln", "none")
+
+add_transform("egfr_ckdepi_creat ~ age + sex_male + diabetes", "ln", "none")
+add_transform("egfr_ckdepi_creat_nondm ~ age + sex_male", "ln", "none")
+add_transform("egfr_ckdepi_creat_dm ~ age + sex_male", "ln", "none")
 
 if (have_followup_data) {
   # TODO is this correct?
-  ln_transform_variables = c(
-    ln_transform_variables,
-    "egfr_decline",
-    "egfr_decline_nondm",
-    "egfr_decline_dm"
-  )
+  add_transform("egfr_decline ~ age + sex_male + diabetes", "ln", "none")
+  add_transform("egfr_decline_nondm ~ age + sex_male", "ln", "none")
+  add_transform("egfr_decline_dm ~ age + sex_male", "ln", "none")
 }
 
-# calculate residuals (and not log-transform): uric acid
-only_residuals_variables = c(  
-  "uric_acid_serum",
-  "uric_acid_serum_female",
-  "uric_acid_serum_male"
-)
+# no transformation for: uric_acid
+add_transform("uric_acid_serum ~ age + sex_male + diabetes", "none", "none")
+add_transform("uric_acid_serum_female ~ age", "none", "none")
+add_transform("uric_acid_serum_male ~ age", "none", "none")
 
-# log-tranform and calculate residuals
-# (crea, egfr, BUN, egfr_decline; +/- DM)
-for (transform_variable in ln_transform_variables) {
-  print(paste("Log-transforming '", transform_variable, 
-              "' and calculating residuals.", sep = ""))
+for (i in 1:nrow(transformations)) {
+  variable = as.character(transformations[i, "variable"])
+  transform = transformations[i, "transform"]
+  postprocess = transformations[i, "postprocess"]
+  formula_chars = as.character(transformations[i, "formula"])
+  formula = as.formula(formula_chars)
   
-  # log-transform variable
-  ln_transform_variable = paste("ln_", transform_variable, sep = "")
-  output[, ln_transform_variable] = log(output[, transform_variable], base=exp(1))
-
-  # calculate residuals
+  # Log-transformation
+  if (transform == "ln") {
+    print(paste("Log-transforming variable: ", variable, sep = ""))
+    ln_transform_variable = paste("ln_", variable, sep = "")
+    output[, ln_transform_variable] = log(output[, variable], base=exp(1))
+    
+    # adjust formula to contain "log" variable name
+    formula_chars = sub(variable, ln_transform_variable, formula_chars)
+    formula = as.formula(formula_chars)
+    variable = ln_transform_variable
+  }
+  
+  # Residual generation
   missingness = calc_missingness(ln_transform_variable)
   if (missingness < 1.0) {
-    residual_values = residuals(lm(output[, ln_transform_variable] ~ output$age + output$sex, na.action="na.exclude"))
+    print(paste("Calculating residuals using formula ", formula_chars,
+                " for variable: ", variable, sep = ""))
+    residual_values = residuals(lm(formula, data = output, 
+                                   na.action = "na.exclude"))
   } else {
+    print(paste("Unable to calculate residuals because of missing data for '", 
+                variable, "'.", sep = ""))
     residual_values = NA
-    print(paste("Unable to calculate residuals because of missing data for '", ln_transform_variable, "'.", sep = ""))
   }
-
-  residual_variable = paste(ln_transform_variable, "_residuals", sep = "")
+  residual_variable = paste(variable, "_residuals", sep = "")
   output[, residual_variable] = residual_values
-}
-
-# rank-based inverse normal-tranform and calculate residuals
-# (uacr, uacr_nondm, uacr_dm)
-# UACR trait transformation: log(UACR) -> residuals -> invnorm
-for (transform_variable in invnorm_transform_variables) {
-  print(paste("Calculate residuals of 'log(", transform_variable, ")' and perform rank-based inverse normal transformation.", sep = ""))
-
-  # variable names
-  log_variable = paste("log_", transform_variable, sep = "")
-  residual_variable = paste(log_variable, "_residuals", sep = "")
-  invnorm_transform_variable = paste("invnorm_", residual_variable, sep = "")
-
-  # log-transform
-  output[, log_variable] = log(output[, transform_variable])
+  variable = residual_variable
   
-  # calculate residuals
-  missingness = calc_missingness(log_variable)
-  if (missingness < 1.0) {
-    residual_values = residuals(lm(output[, log_variable] ~ output$age + output$sex, na.action="na.exclude"))
-    output[, residual_variable] = residual_values
-
-    # inverse-normal transform residuals
-    output[, invnorm_transform_variable] = qnorm((rank(residual_values, na.last="keep") - 0.5) / sum(!is.na(residual_values)))
-  } else {
-    print(paste("Unable to calculate residuals because of missing data for '", invnorm_transform_variable, "'.", sep = ""))
-    output[, residual_variable] = NA
-    output[, invnorm_transform_variable] = NA
-  }
-}
-
-# calculate residuals for non-logarithmic variables
-# (uric_acid_serum, uric_acid_serum_male, uric_acid_serum_female)
-for (transform_variable in only_residuals_variables) {
-  print(paste("Calculating residuals for '", transform_variable, "'.", sep = ""))
-  
-  # calculate residuals
-  missingness = calc_missingness(transform_variable)
-  if (missingness < 1.0) {
-    # if stratum is female or male, do not put sex into residuals
-    if (grepl("_male", transform_variable) || grepl("_female", transform_variable)) {
-      print(paste("Do not adjust for sex (only for age) for phenotype:", transform_variable))
-      residual_values = residuals(lm(output[, transform_variable] ~ output$age, na.action="na.exclude"))
+  # Rank-based inverse-normal tranformation
+  if (postprocess == "invnorm") {
+    invnorm_transform_variable = paste(residual_variable, "_invnorm", sep = "")
+    if (missingness < 1.0) {
+      output[, invnorm_transform_variable] = qnorm((rank(residual_values, 
+            na.last = "keep") - 0.5) / sum(!is.na(residual_values)))
     } else {
-      residual_values = residuals(lm(output[, transform_variable] ~ output$age + output$sex, na.action="na.exclude"))
+      print(paste("Unable to do inverse normal transformation because of missing data for '", 
+                  variable, "'.", sep = ""))
+      output[, invnorm_transform_variable] = NA
     }
-  } else {
-    residual_values = NA
-    print(paste("Unable to calculate residuals because of missing data for '", transform_variable, "'.", sep = ""))
   }
-  
-  residual_variable = paste(transform_variable, "_residuals", sep = "")
-  output[, residual_variable] = residual_values
 }
 
 # make GWAS phenotype output file with less columns
@@ -660,18 +640,18 @@ if (family_based_study == "1") {
     gout_overall = output$gout,
     gout_female = output$gout_female,
     gout_male = output$gout_male,
-    creat_overall = output$ln_creatinine_serum_residuals,
-    creat_dm = output$ln_creat_dm_residuals,
-    creat_nondm = output$ln_creat_nondm_residuals,
+    screat_overall = output$ln_creatinine_serum_residuals,
+    screat_dm = output$ln_creat_dm_residuals,
+    screat_nondm = output$ln_creat_nondm_residuals,
     bun_overall = output$ln_bun_serum_residuals,
     bun_dm = output$ln_bun_serum_dm_residuals,
     bun_nondm = output$ln_bun_serum_nondm_residuals,
     egfr_overall = output$ln_egfr_ckdepi_creat_residuals,
     egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
     egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
-    uacr_overall = output$invnorm_log_uacr_residuals,
-    uacr_dm = output$invnorm_log_uacr_dm_residuals,
-    uacr_nondm = output$invnorm_log_uacr_nondm_residuals,
+    uacr_overall = output$ln_uacr_residuals_invnorm,
+    uacr_dm = output$ln_uacr_dm_residuals_invnorm,
+    uacr_nondm = output$ln_uacr_nondm_residuals_invnorm,
     uric_acid_overall = output$uric_acid_serum_residuals,
     uric_acid_female = output$uric_acid_serum_female_residuals,
     uric_acid_male = output$uric_acid_serum_male_residuals
@@ -702,14 +682,14 @@ if (family_based_study == "1") {
     microalbuminuria_nondm = output$microalbuminuria_nondm,
     gout_female = output$gout_female,
     gout_male = output$gout_male,
-    creat_dm = output$ln_creat_dm_residuals,
-    creat_nondm = output$ln_creat_nondm_residuals,
+    screat_dm = output$ln_creat_dm_residuals,
+    screat_nondm = output$ln_creat_nondm_residuals,
     bun_dm = output$ln_bun_serum_dm_residuals,
     bun_nondm = output$ln_bun_serum_nondm_residuals,
     egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
     egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
-    uacr_dm = output$invnorm_log_uacr_dm_residuals,
-    uacr_nondm = output$invnorm_log_uacr_nondm_residuals,
+    uacr_dm = output$ln_uacr_dm_residuals_invnorm,
+    uacr_nondm = output$ln_uacr_nondm_residuals_invnorm,
     uric_acid_female = output$uric_acid_serum_female_residuals,
     uric_acid_male = output$uric_acid_serum_male_residuals
   )
@@ -809,7 +789,6 @@ par(mfrow = c(3, 3))
 
 for (categorial_variable in categorial_variables) {
   cat_table = table(output[, categorial_variable], useNA = "always")
-  print(paste(categorial_variable, cat_table))
   zero = length(which(output[, categorial_variable] == "0"))
   one = length(which(output[, categorial_variable] == "1"))
   nav = length(which(is.na(output[, categorial_variable])))
@@ -831,9 +810,7 @@ input_variables_to_plot = c(
 
 quantitative_variables = c(
   input_variables_to_plot, 
-  ln_transform_variables,
-  invnorm_transform_variables,
-  only_residuals_variables
+  as.character(transformations$variable)
 )
 
 for (variable in quantitative_variables) {
@@ -846,8 +823,14 @@ for (variable in quantitative_variables) {
   non_missing_records = length(which(!is.na(output[, variable])))
   missing_records = length(which(is.na(output[, variable])))
   
-  # 2x2 plots, leave space for page title
-  par(mfrow = c(2, 2), oma = c(0, 0, 3, 0))
+  have_invnorm = grepl("uacr", variable)
+  if (have_invnorm) {
+    # 3x2 plots, leave space for page title
+    par(mfrow = c(3, 2), oma = c(0, 0, 3, 0))
+  } else {
+    # 2x2 plots, leave space for page title
+    par(mfrow = c(2, 2), oma = c(0, 0, 3, 0))    
+  }
   
   # box plot
   summ = summary(output[, variable])
@@ -904,44 +887,19 @@ for (variable in quantitative_variables) {
     lines(xfit, yfit, col="blue", lwd = 2) 
   }
   
-  # density plot of invnorm transformation
-  invnorm_variable = paste("log_", variable, "_residuals", sep = "")
-  if (invnorm_variable %in% colnames(output)) {
-    histogram = hist(output[, invnorm_variable], 
-                     breaks = 40, 
-                     prob = TRUE,
-                     col = "grey",
-                     main = "Transformed phenotype", 
-                     xlab = invnorm_variable, 
-                     ylab = "Probability", 
-                     sub = "")
-    lines(density(output[, invnorm_variable], na.rm = TRUE), col="red", lwd=2)
-    
-    xfit = seq(min(output[, invnorm_variable], na.rm = TRUE), 
-               max(output[, invnorm_variable], na.rm = TRUE), length = 40)
-    yfit = dnorm(xfit, 
-                 mean = mean(output[, invnorm_variable], na.rm = TRUE), 
-                 sd = sd(output[, invnorm_variable], na.rm = TRUE))
-    lines(xfit, yfit, col="blue", lwd = 2) 
-  }
-  
   # plot of residuals
   residual_variable = paste(ln_variable, "_residuals", sep = "")
   if (!(residual_variable %in% colnames(output))) {
-    # try non-logarithmic residual
+    # try non-logarithmic residual variable
     residual_variable = paste(variable, "_residuals", sep = "")
   }
-  if (!(residual_variable %in% colnames(output))) {
-    # try invnormal residual
-    residual_variable = paste("invnorm_log_", variable, "_residuals", sep = "")
-  }
-  
+
   if (residual_variable %in% colnames(output)) {
     histogram = hist(output[, residual_variable], 
                      breaks = 40, 
                      prob = TRUE,
                      col = "grey",
-                     main = "Final phenotype", 
+                     main = "Residuals", 
                      xlab = residual_variable, 
                      ylab = "Probability", 
                      sub = "")
@@ -952,6 +910,27 @@ for (variable in quantitative_variables) {
     yfit = dnorm(xfit, 
                  mean = mean(output[, residual_variable], na.rm = TRUE), 
                  sd = sd(output[, residual_variable], na.rm = TRUE))
+    lines(xfit, yfit, col="blue", lwd = 2) 
+  }
+  
+  # density plot of invnorm transformation
+  invnorm_variable = paste("ln_", variable, "_residuals_invnorm", sep = "")
+  if (invnorm_variable %in% colnames(output)) {
+    histogram = hist(output[, invnorm_variable], 
+                     breaks = 40, 
+                     prob = TRUE,
+                     col = "grey",
+                     main = "Normalized residuals", 
+                     xlab = invnorm_variable, 
+                     ylab = "Probability", 
+                     sub = "")
+    lines(density(output[, invnorm_variable], na.rm = TRUE), col="red", lwd=2)
+    
+    xfit = seq(min(output[, invnorm_variable], na.rm = TRUE), 
+               max(output[, invnorm_variable], na.rm = TRUE), length = 40)
+    yfit = dnorm(xfit, 
+                 mean = mean(output[, invnorm_variable], na.rm = TRUE), 
+                 sd = sd(output[, invnorm_variable], na.rm = TRUE))
     lines(xfit, yfit, col="blue", lwd = 2) 
   }
   
