@@ -132,7 +132,8 @@ if (nrow(data) < 100 || ncol(data) < 10) {
 ### Column names
 
 column_individual_id = Sys.getenv("COLUMN_INDIVIDUAL_ID")
-column_age = Sys.getenv("COLUMN_AGE")
+column_age_blood = Sys.getenv("COLUMN_AGE_BLOOD")
+column_age_urine = Sys.getenv("COLUMN_AGE_URINE")
 column_sex_male = Sys.getenv("COLUMN_SEX_MALE")
 column_race_black = Sys.getenv("COLUMN_RACE_BLACK")
 column_creatinine_serum = Sys.getenv("COLUMN_CREATININE_SERUM")
@@ -145,17 +146,18 @@ column_hypertension = Sys.getenv("COLUMN_HYPERTENSION")
 column_diabetes = Sys.getenv("COLUMN_DIABETES")
 column_gout = Sys.getenv("COLUMN_GOUT")
 column_creatinine_serum_followup = Sys.getenv("COLUMN_CREATININE_SERUM_FOLLOWUP")
-column_followup_age = Sys.getenv("COLUMN_FOLLOWUP_AGE")
+column_age_followup = Sys.getenv("COLUMN_AGE_FOLLOWUP")
 
 mandatory_columns = c(
   "column_individual_id",
-  "column_age",
+  "column_age_blood",
   "column_sex_male",
   "column_race_black",
   "column_diabetes"
 )
 
 optional_columns = c(
+  "column_age_urine",
   "column_creatinine_serum",
   "column_uric_acid_serum",
   "column_creatinine_urinary",
@@ -163,7 +165,7 @@ optional_columns = c(
   "column_bun_serum",
   "column_urea_serum",
   "column_creatinine_serum_followup",
-  "column_followup_age",
+  "column_age_followup",
   "column_hypertension",
   "column_gout"
 )
@@ -281,15 +283,12 @@ summary_statistics = data.frame()
 for (column in all_columns) {
   column_name = get(column)
   if (column_name == "") {
-    # must be optional
-    print(paste("Skipping summary statistics for", column, 
-                " - column not present"))
+    # skip summaries for optional column
     next;
   }
   
   if (column == "column_individual_id") {
-    # no summaries for individual ID
-    print("No summary for individual ID column")
+    # no summaries for individual ID column
     next;
   }
   
@@ -359,7 +358,7 @@ if (creatinine_urinary_unit == "0") {
 }
 
 have_followup_crea = length(which(!is.na(output$creatinine_serum_followup))) > 0
-have_followup_age = length(which(!is.na(output$followup_age))) > 0
+have_followup_age = length(which(!is.na(output$age_followup))) > 0
 if (have_followup_crea && !have_followup_age) {
   stop("Follow-up creatinine present, but no follow-up age.")
 } else if (have_followup_age && !have_followup_crea) {
@@ -374,7 +373,7 @@ if (have_followup_data) {
 }
 
 followup_crea_na = which(is.na(output$creatinine_serum_followup))
-followup_age_na = which(is.na(output$followup_age))
+followup_age_na = which(is.na(output$age_followup))
 if (length(which(followup_crea_na != followup_age_na)) > 0 || 
     length(followup_crea_na) != length(followup_age_na)) {
   print("WARNING: Non-corresponding NA values for follow-up creatinine/age.")
@@ -383,8 +382,21 @@ if (length(which(followup_crea_na != followup_age_na)) > 0 ||
   print(paste("Follow-up age is NA for records: ", followup_age_na, sep = ""))
 }
 
+if (have_followup_age) {
+  followup_age_before_baseline = which(output$age_followup < output$age_blood)
+  if (length(followup_age_before_baseline)) {
+    print(paste("Follow-up age is before baseline for records: ", 
+                followup_age_before_baseline, sep = ""))
+    stop("Follow-up age less than baseline age.")
+  }
+}
 
 ### CALCULATE ADDITIONAL COLUMNS IN OUTPUT
+
+if (column_age_urine == "") {
+  print("Use 'blood' age as 'urine' age as there is no 'age_urine' column.")
+  output$age_urine = output$age_blood
+}
 
 # calculate UACR
 print("Calculating UACR")
@@ -395,7 +407,7 @@ output$uacr = output$albumin_urinary_lod / output$creatinine_urinary * 100
 # calculate eGFR (CKDEpi)
 print("Calculating eGFR creat (CKDEpi)")
 output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, 
-                                        output$age, output$race_black)
+                                        output$age_blood, output$race_black)
 
 # calculate eGFR (CKDEpi) on followup
 if (have_followup_data) {
@@ -434,7 +446,7 @@ output[uacr_medium, "microalbuminuria"] = NA
 # calculate longitudinal phenotypes
 if (have_followup_data) {
   print("calculate longitudinal phenotypes")
-  time_diff = output$age_followup - output$age_baseline
+  time_diff = output$age_followup - output$age_blood
   check.decline.variables(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
   output$ckdi = calc_CKDi(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
   output$ckdi25 = calc_CKDi25(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
@@ -546,34 +558,35 @@ add_transform = function (formula, transform, postprocess) {
 transformations = data.frame()
 
 # rank-based inverse normal transformation for: log UACR
-add_transform("uacr ~ age + sex_male + diabetes", "ln", "invnorm")
-add_transform("uacr_nondm ~ age + sex_male", "ln", "invnorm")
-add_transform("uacr_dm ~ age + sex_male", "ln", "invnorm")
+add_transform("uacr ~ age_urine + sex_male + diabetes", "ln", "invnorm")
+add_transform("uacr_nondm ~ age_urine + sex_male", "ln", "invnorm")
+add_transform("uacr_dm ~ age_urine + sex_male", "ln", "invnorm")
 
 # log-transform and calculate residuals for: creatinine, BUN, eGFR
-add_transform("creatinine_serum ~ age + sex_male + diabetes", "ln", "none")
-add_transform("creat_nondm ~ age + sex_male", "ln", "none")
-add_transform("creat_dm ~ age + sex_male", "ln", "none")
+add_transform("creatinine_serum ~ age_blood + sex_male + diabetes", "ln", "none")
+add_transform("creat_nondm ~ age_blood + sex_male", "ln", "none")
+add_transform("creat_dm ~ age_blood + sex_male", "ln", "none")
 
-add_transform("bun_serum ~ age + sex_male + diabetes", "ln", "none")
-add_transform("bun_serum_nondm ~ age + sex_male", "ln", "none")
-add_transform("bun_serum_dm ~ age + sex_male", "ln", "none")
+add_transform("bun_serum ~ age_blood + sex_male + diabetes", "ln", "none")
+add_transform("bun_serum_nondm ~ age_blood + sex_male", "ln", "none")
+add_transform("bun_serum_dm ~ age_blood + sex_male", "ln", "none")
 
-add_transform("egfr_ckdepi_creat ~ age + sex_male + diabetes", "ln", "none")
-add_transform("egfr_ckdepi_creat_nondm ~ age + sex_male", "ln", "none")
-add_transform("egfr_ckdepi_creat_dm ~ age + sex_male", "ln", "none")
+add_transform("egfr_ckdepi_creat ~ age_blood + sex_male + diabetes", "ln", "none")
+add_transform("egfr_ckdepi_creat_nondm ~ age_blood + sex_male", "ln", "none")
+add_transform("egfr_ckdepi_creat_dm ~ age_blood + sex_male", "ln", "none")
 
 if (have_followup_data) {
-  # TODO is this correct?
-  add_transform("egfr_decline ~ age + sex_male + diabetes", "ln", "none")
-  add_transform("egfr_decline_nondm ~ age + sex_male", "ln", "none")
-  add_transform("egfr_decline_dm ~ age + sex_male", "ln", "none")
+  # TODO is ln-transform correct?
+  add_transform("egfr_decline ~ age_blood + sex_male + diabetes", "ln", "none")
+  add_transform("egfr_decline_nondm ~ age_blood + sex_male", "ln", "none")
+  add_transform("egfr_decline_dm ~ age_blood + sex_male", "ln", "none")
 }
 
 # no transformation for: uric_acid
-add_transform("uric_acid_serum ~ age + sex_male + diabetes", "none", "none")
-add_transform("uric_acid_serum_female ~ age", "none", "none")
-add_transform("uric_acid_serum_male ~ age", "none", "none")
+# TODO: have diabetes as covariate (rather not)?
+add_transform("uric_acid_serum ~ age_blood + sex_male", "none", "none")
+add_transform("uric_acid_serum_female ~ age_blood", "none", "none")
+add_transform("uric_acid_serum_male ~ age_blood", "none", "none")
 
 for (i in 1:nrow(transformations)) {
   variable = as.character(transformations[i, "variable"])
@@ -721,7 +734,8 @@ for (variable_name in colnames(output)) {
   }
 }
 
-check_median_by_range("age", 1, 100)
+check_median_by_range("age_blood", 1, 100)
+check_median_by_range("age_urine", 1, 100)
 check_median_by_range("creatinine_serum", 0.5, 2.5)
 check_median_by_range("albumin_urinary", 0, 200)
 check_median_by_range("creatinine_urinary", 0, 200)
@@ -730,7 +744,7 @@ check_median_by_range("uacr", 0, 200)
 check_median_by_range("bun_serum", 10, 100)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 check_median_by_range("creatinine_serum_followup", 0.5, 2.5)
-check_median_by_range("followup_age", 1, 100)
+check_median_by_range("age_followup", 1, 100)
 
 check_categorial("sex_male", c(0, 1))
 check_categorial("race_black", c(0, 1))
@@ -801,15 +815,24 @@ for (categorial_variable in categorial_variables) {
 }
 
 # quantitative plots
-input_variables_to_plot = c(
-  "age",
-  "followup_age",  
-  "albumin_urinary",
-  "creatinine_urinary"
-)
+if (column_age_urine == "") {
+  # don't make duplicate plot for age_urine (as it is set to age_blood)
+  age_variables_to_plot = c(
+    "age_blood",
+    "age_followup"
+  )
+} else {
+  age_variables_to_plot = c(
+    "age_blood",
+    "age_urine",
+    "age_followup"
+  )
+}
 
 quantitative_variables = c(
-  input_variables_to_plot, 
+  age_variables_to_plot,
+  "albumin_urinary",
+  "creatinine_urinary",
   as.character(transformations$variable)
 )
 

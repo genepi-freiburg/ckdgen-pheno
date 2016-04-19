@@ -71,8 +71,15 @@ COLUMN_INDIVIDUAL_ID="iid"
 ### PATIENT DEMOGRAPHICS
 ###------------------------------------------------------------------
 
-# Patient age (years) at baseline
-COLUMN_AGE="age"
+# Patient age (years, may have decimals) at timepoint of blood collection
+# for measurements such as creatinine, BUN/urea, uric acid
+# Mandatory.
+COLUMN_AGE_BLOOD="age"
+
+# Patient age (years, may have decimals) at timepoint of urine collection
+# for urinary albumin and creatinine measurements
+# Optional. If not given, will fall back to COLUMN_AGE_BLOOD.
+COLUMN_AGE_URINE=""
 
 # Patient sex (1 = male, 0 = female)
 COLUMN_SEX_MALE="male"
@@ -134,9 +141,10 @@ COLUMN_GOUT="gout"
 # Unit: see CREATININE_SERUM_UNIT
 COLUMN_CREATININE_SERUM_FOLLOWUP=""
 
-# Column name for the distance (years) between creatinine measurements
-# Optional (but must be given if you set COLUMN_CREATININE_SERUM_SECOND)
-COLUMN_FOLLOWUP_AGE=""
+# Column name for the age (years, may have decimals) at the blood collection
+# for the follow-up creatinine measurement
+# Optional (but must be given if you set COLUMN_CREATININE_SERUM_FOLLOWUP)
+COLUMN_AGE_BLOOD_FOLLOWUP=""
 
 #####################################################################
 ### STUDY PARAMETERS
