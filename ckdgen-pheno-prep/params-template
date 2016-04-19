@@ -139,12 +139,12 @@ COLUMN_GOUT="gout"
 # Column name with second serum creatinine measurement
 # Option (leave empty if you don't have serial creatinines)
 # Unit: see CREATININE_SERUM_UNIT
-COLUMN_CREATININE_SERUM_FOLLOWUP=""
+COLUMN_CREATININE_SERUM_FOLLOWUP="screa_fu2"
 
 # Column name for the age (years, may have decimals) at the blood collection
 # for the follow-up creatinine measurement
 # Optional (but must be given if you set COLUMN_CREATININE_SERUM_FOLLOWUP)
-COLUMN_AGE_BLOOD_FOLLOWUP=""
+COLUMN_AGE_BLOOD_FOLLOWUP="age_fu2"
 
 #####################################################################
 ### STUDY PARAMETERS

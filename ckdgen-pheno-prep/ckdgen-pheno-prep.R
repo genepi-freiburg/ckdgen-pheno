@@ -146,7 +146,7 @@ column_hypertension = Sys.getenv("COLUMN_HYPERTENSION")
 column_diabetes = Sys.getenv("COLUMN_DIABETES")
 column_gout = Sys.getenv("COLUMN_GOUT")
 column_creatinine_serum_followup = Sys.getenv("COLUMN_CREATININE_SERUM_FOLLOWUP")
-column_age_followup = Sys.getenv("COLUMN_AGE_FOLLOWUP")
+column_age_blood_followup = Sys.getenv("COLUMN_AGE_BLOOD_FOLLOWUP")
 
 mandatory_columns = c(
   "column_individual_id",
@@ -165,7 +165,7 @@ optional_columns = c(
   "column_bun_serum",
   "column_urea_serum",
   "column_creatinine_serum_followup",
-  "column_age_followup",
+  "column_age_blood_followup",
   "column_hypertension",
   "column_gout"
 )
@@ -357,8 +357,10 @@ if (creatinine_urinary_unit == "0") {
   output$creatinine_urinary = output$creatinine_urinary / 88.4
 }
 
+summary(output)
+
 have_followup_crea = length(which(!is.na(output$creatinine_serum_followup))) > 0
-have_followup_age = length(which(!is.na(output$age_followup))) > 0
+have_followup_age = length(which(!is.na(output$age_blood_followup))) > 0
 if (have_followup_crea && !have_followup_age) {
   stop("Follow-up creatinine present, but no follow-up age.")
 } else if (have_followup_age && !have_followup_crea) {
@@ -373,17 +375,17 @@ if (have_followup_data) {
 }
 
 followup_crea_na = which(is.na(output$creatinine_serum_followup))
-followup_age_na = which(is.na(output$age_followup))
-if (length(which(followup_crea_na != followup_age_na)) > 0 || 
-    length(followup_crea_na) != length(followup_age_na)) {
+followup_age_na = which(is.na(output$age_blood_followup))
+if (length(followup_crea_na) != length(followup_age_na) ||
+    length(which(followup_crea_na != followup_age_na)) > 0) {
   print("WARNING: Non-corresponding NA values for follow-up creatinine/age.")
   print("NA values for follow-up eGFR will be generated for the union.")
-  print(paste("Follow-up creatinine is NA for records: ", followup_crea_na, sep = ""))
-  print(paste("Follow-up age is NA for records: ", followup_age_na, sep = ""))
+  print(paste("Follow-up creatinine is NA for record count: ", length(followup_crea_na), sep = ""))
+  print(paste("Follow-up age is NA for record count: ", length(followup_age_na), sep = ""))
 }
 
 if (have_followup_age) {
-  followup_age_before_baseline = which(output$age_followup < output$age_blood)
+  followup_age_before_baseline = which(output$age_blood_followup < output$age_blood)
   if (length(followup_age_before_baseline)) {
     print(paste("Follow-up age is before baseline for records: ", 
                 followup_age_before_baseline, sep = ""))
@@ -413,7 +415,7 @@ output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male
 if (have_followup_data) {
   print("Calculating eGFR creat (CKDEpi) for followup")
   output$egfr_ckdepi_followup = CKDEpi.creat(output$creatinine_serum_followup, output$sex_male,
-                                        output$age_followup, output$race_black)
+                                        output$age_blood_followup, output$race_black)
 } else {
   print("No followup creatinine available.")
   output$egfr_ckdepi_followup = NA
@@ -446,7 +448,7 @@ output[uacr_medium, "microalbuminuria"] = NA
 # calculate longitudinal phenotypes
 if (have_followup_data) {
   print("calculate longitudinal phenotypes")
-  time_diff = output$age_followup - output$age_blood
+  time_diff = output$age_blood_followup - output$age_blood
   check.decline.variables(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
   output$ckdi = calc_CKDi(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
   output$ckdi25 = calc_CKDi25(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
@@ -576,14 +578,15 @@ add_transform("egfr_ckdepi_creat_nondm ~ age_blood + sex_male", "ln", "none")
 add_transform("egfr_ckdepi_creat_dm ~ age_blood + sex_male", "ln", "none")
 
 if (have_followup_data) {
-  # TODO is ln-transform correct?
-  add_transform("egfr_decline ~ age_blood + sex_male + diabetes", "ln", "none")
-  add_transform("egfr_decline_nondm ~ age_blood + sex_male", "ln", "none")
-  add_transform("egfr_decline_dm ~ age_blood + sex_male", "ln", "none")
+  # TODO do we need to transform egfr_decline? "ln" is not good because of
+  # negative values
+  add_transform("egfr_decline ~ age_blood + sex_male + diabetes", "none", "none")
+  add_transform("egfr_decline_nondm ~ age_blood + sex_male", "none", "none")
+  add_transform("egfr_decline_dm ~ age_blood + sex_male", "none", "none")
 }
 
 # no transformation for: uric_acid
-# TODO: have diabetes as covariate (rather not)?
+# TODO: should we have diabetes as covariate (rather not)?
 add_transform("uric_acid_serum ~ age_blood + sex_male", "none", "none")
 add_transform("uric_acid_serum_female ~ age_blood", "none", "none")
 add_transform("uric_acid_serum_male ~ age_blood", "none", "none")
@@ -744,7 +747,7 @@ check_median_by_range("uacr", 0, 200)
 check_median_by_range("bun_serum", 10, 100)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 check_median_by_range("creatinine_serum_followup", 0.5, 2.5)
-check_median_by_range("age_followup", 1, 100)
+check_median_by_range("age_blood_followup", 1, 100)
 
 check_categorial("sex_male", c(0, 1))
 check_categorial("race_black", c(0, 1))
@@ -819,13 +822,13 @@ if (column_age_urine == "") {
   # don't make duplicate plot for age_urine (as it is set to age_blood)
   age_variables_to_plot = c(
     "age_blood",
-    "age_followup"
+    "age_blood_followup"
   )
 } else {
   age_variables_to_plot = c(
     "age_blood",
     "age_urine",
-    "age_followup"
+    "age_blood_followup"
   )
 }
 
