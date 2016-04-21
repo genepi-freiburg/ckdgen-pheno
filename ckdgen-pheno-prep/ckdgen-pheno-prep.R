@@ -86,12 +86,13 @@ for (mandatory_param in mandatory_params) {
 }
 
 if (nchar(as.character(lod_urinary_albumin)) > 0) {
-  if (lod_urinary_albumin < 1 || lod_urinary_albumin > 20) {
+  if (lod_urinary_albumin < 0.1 || lod_urinary_albumin > 20) {
     stop(paste("Limit of detection for urinary albumin out of bounds: ", 
                lod_urinary_albumin, sep = ""))
   }  
 } else {
   print("WARNING: No limit of detection (LOD) given for urinary albumin.")
+  lod_urinary_albumin = 0
 }
 
 print("All mandatory parameters are present.")
@@ -150,13 +151,14 @@ column_age_blood_followup = Sys.getenv("COLUMN_AGE_BLOOD_FOLLOWUP")
 
 mandatory_columns = c(
   "column_individual_id",
-  "column_age_blood",
   "column_sex_male",
   "column_race_black",
-  "column_diabetes"
+  "column_diabetes",
+  "column_hypertension"
 )
 
 optional_columns = c(
+  "column_age_blood",
   "column_age_urine",
   "column_creatinine_serum",
   "column_uric_acid_serum",
@@ -166,7 +168,6 @@ optional_columns = c(
   "column_urea_serum",
   "column_creatinine_serum_followup",
   "column_age_blood_followup",
-  "column_hypertension",
   "column_gout"
 )
 
@@ -208,7 +209,7 @@ for (mandatory_column in mandatory_columns) {
 
 if (column_bun_serum == "" &&
     column_urea_serum == "") {
-  print(paste("Either BUN or UREA column name should be given if available."))
+  print("Either BUN or UREA column name should be given if available.")
   error = data.frame(severity = "WARNING", 
                      line_number = NA, 
                      message = "BUN or UREA column name missing",
@@ -228,6 +229,18 @@ for (optional_column in optional_columns) {
       data[, optional_column_name] = NA
     }
   }
+}
+
+# we need at least data for one age column
+if (length(which(!is.na(data[, column_age_blood]))) == 0 &&
+    length(which(!is.na(data[, column_age_urine]))) == 0) {
+  print("Need data for 'age_blood' or 'age_urine'.")
+  error = data.frame(severity = "ERROR", 
+                     line_number = NA, 
+                     message = "Baseline age data missing",
+                     param1 = column_age_blood,
+                     param2 = column_age_urine)
+  errors = rbind(errors, error)
 }
 
 # Stop if there are errors
@@ -314,15 +327,27 @@ if (urate_unit == "0") {
   output$uric_acid_serum = output$uric_acid_serum / 59.48
 }
 
+if (urate_unit == "" && length(which(is.na(output$uric_acid_serum))) > 0) {
+  print("WARNING: You have uric_acid_serum data, but did not give an unit. Assuming mg/dl.")
+}
+
 if (creatinine_serum_unit == "0") {
   print("Convert serum creatinine (baseline and follow-up, if applicable) from umol/l to mg/dl")
   output$creatinine_serum = output$creatinine_serum / 88.4
   output$creatinine_serum_followup = output$creatinine_serum_followup / 88.4
 }
 
+if (creatinine_serum_unit == "" && length(which(is.na(output$creatinine_serum))) > 0) {
+  print("WARNING: You have creatinine_serum data, but did not give an unit. Assuming mg/dl.")
+}
+
 if (creatinine_urinary_unit == "0") {
   print("Convert urinary creatinine from umol/l to mg/dl")
   output$creatinine_urinary = output$creatinine_urinary / 88.4
+}
+
+if (creatinine_urinary_unit == "" && length(which(is.na(output$creatinine_urinary))) > 0) {
+  print("WARNING: You have creatinine_urinary data, but did not give an unit. Assuming mg/dl.")
 }
 
 summary(output)
@@ -363,14 +388,25 @@ if (have_followup_age) {
 
 ### CALCULATE ADDITIONAL COLUMNS IN OUTPUT
 
+# check/complete age columns
 if (column_age_urine == "") {
   print("Use 'blood' age column as 'urine' as there is no 'age_urine' column.")
   output$age_urine = output$age_blood
 }
 
+if (column_age_blood == "") {
+  print("Use 'urine' age column as 'blood' as there is no 'age_blood' column.")
+  output$age_blood = output$age_urine
+}
+
 if (length(which(!is.na(output$age_urine))) == 0) {
   print("No 'urine' age data available - use 'blood' age.")
   output$age_urine = output$age_blood
+}
+
+if (length(which(!is.na(output$age_blood))) == 0) {
+  print("No 'blood' age data available - use 'urine' age.")
+  output$age_blood = output$age_urine
 }
 
 # calculate UACR
@@ -551,15 +587,12 @@ add_transform("egfr_ckdepi_creat_nondm ~ age_blood + sex_male", "ln", "none")
 add_transform("egfr_ckdepi_creat_dm ~ age_blood + sex_male", "ln", "none")
 
 if (have_followup_data) {
-  # TODO do we need to transform egfr_decline? "ln" is not good because of
-  # negative values
   add_transform("egfr_decline ~ age_blood + sex_male + diabetes", "none", "none")
   add_transform("egfr_decline_nondm ~ age_blood + sex_male", "none", "none")
   add_transform("egfr_decline_dm ~ age_blood + sex_male", "none", "none")
 }
 
 # no transformation for: uric_acid
-# TODO: should we have diabetes as covariate (rather not)?
 add_transform("uric_acid_serum ~ age_blood + sex_male", "none", "none")
 add_transform("uric_acid_serum_female ~ age_blood", "none", "none")
 add_transform("uric_acid_serum_male ~ age_blood", "none", "none")

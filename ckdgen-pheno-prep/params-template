@@ -1,7 +1,6 @@
 #####################################################################
 # Parameters file for the CKDgen Phenotype Preparation script
 #####################################################################
-set -a
 
 # Name of your study
 STUDY_NAME="GCKD"
@@ -12,20 +11,20 @@ FAMILY_BASED_STUDY="0"
 # Name (and path) of YOUR phenotype file: replace with your file name.
 INPUT_FILE="testinput.txt"
 
-# Jaffe assay for creatinine measurement in blood: 1 = Jaffe; 0 = other
+# Jaffe assay for creatinine measurement in blood: 1 = Jaffe; 0 = other; may be empty
 JAFFE_BLOOD="0"
 
 # year of serum creatinine laboratory assay: please ask your lab
 # if you don't know, report the year of the study
 YEAR="2012"
 
-# Unit of SERUM creatinine measurements: 0 = umol/l, 1 = mg/dl
+# Unit of SERUM creatinine measurements: 0 = umol/l, 1 = mg/dl; may be empty
 CREATININE_SERUM_UNIT="1"
 
-# Unit of URINARY creatinine measurement: 0 = umol/l, 1 = mg/dl
+# Unit of URINARY creatinine measurement: 0 = umol/l, 1 = mg/dl; may be empty
 CREATININE_URINARY_UNIT="1"
 
-# Unit of urate measurement: 0 = umol/l, 1 = mg/dl
+# Unit of urate measurement: 0 = umol/l, 1 = mg/dl; may be empty
 URATE_UNIT="1"
 
 # LOD (limit of detection) of urinary albumin assay, in mg/L
