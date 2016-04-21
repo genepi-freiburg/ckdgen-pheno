@@ -16,23 +16,6 @@ progression_script_name = paste(script_basename,
 print(paste("Sourcing '", progression_script_name, "'.", sep = ""))
 source(progression_script_name)
 
-### REQUIRE NEPHRO LIBRARY
-
-nephro = try(library("nephro"))
-if (class(nephro) == "try-error") {
-  print("The 'nephro' library is not available. I am going to install it.")
-  nephro=try(install.packages("nephro"))
-  if (class(nephro) == "try-error") {
-    stop("Installation of the 'nephro' library wasn't successful. Please install manually.")
-  } else {
-    nephro = try(library("nephro"))
-    if (class(nephro) == "try-error") {
-      stop("The 'nephro' library is not available. Please install manually.")
-    }
-  }
-} else {
-  print("Library 'nephro' loaded successfully.")
-}
 
 ### I/O PARAMS
 

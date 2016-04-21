@@ -150,3 +150,49 @@ skewness = function(x, na.rm = FALSE) {
     skewness(as.vector(x), na.rm = na.rm)
   }
 }
+
+# CKDEpi creatinine equation
+# taken directly from R "nephro" package
+CKDEpi.creat <- function(creatinine, sex, age, ethnicity)
+{ 
+  if (!is.null(creatinine) & !is.null(sex) & !is.null(age) & !is.null(ethnicity))
+  {
+    creatinine <- as.numeric(creatinine)
+    ethnicity <- as.numeric(ethnicity)      
+    sex <- as.numeric(sex)
+    age <- as.numeric(age)
+    
+    n <- length(creatinine)
+    
+    if (length(sex) == n & length(age) == n & length(ethnicity) == n)
+    {
+      # Identify missing data and store the index
+      idx <- c(1:n)[is.na(creatinine) | is.na(sex) | is.na(age) | is.na(ethnicity)]
+      
+      # Replace missing data with fake data to avoid problems with formulas
+      creatinine[is.na(creatinine)] <- 10
+      sex[is.na(sex)] <- 10
+      age[is.na(age)] <- 10
+      ethnicity[is.na(ethnicity)] <- 10
+      
+      # CKD-Epi equation
+      k <- a <- numeric(n)
+      k[sex==0] <- 0.7
+      k[sex==1] <- 0.9
+      a[sex==0] <- -0.329
+      a[sex==1] <- -0.411
+      one <- rep(1,n)
+      eGFR <- apply(cbind(creatinine/k,one),1,min,na.rm=T)^a * apply(cbind(creatinine/k,one),1,max,na.rm=T)^-1.209 * 0.993^age
+      eGFR[sex==0] <- eGFR[sex==0] * 1.018
+      eGFR[ethnicity==1] <- eGFR[ethnicity==1] * 1.159
+      
+      # Restore missing data at the indexed positions
+      eGFR[idx] <- NA
+      
+      # Output
+      141 * eGFR
+    } else
+      stop ("Different number of observations between variables") 
+  } else
+    stop ("Some variables are not defined") 
+}
