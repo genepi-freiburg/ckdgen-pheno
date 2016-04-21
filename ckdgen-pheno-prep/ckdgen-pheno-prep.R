@@ -53,7 +53,7 @@ errors = data.frame()
 ### FURTHER PARAMS
 
 jaffe_blood = Sys.getenv("JAFFE_BLOOD")
-jaffe_year = Sys.getenv("JAFFE_YEAR")
+year = Sys.getenv("YEAR")
 creatinine_serum_unit = Sys.getenv("CREATININE_SERUM_UNIT")
 creatinine_urinary_unit = Sys.getenv("CREATININE_URINARY_UNIT")
 urate_unit = Sys.getenv("URATE_UNIT")
@@ -72,7 +72,7 @@ mandatory_params = c(
   "summary_output_file_txt",
   "summary_output_file_pdf"
 # "jaffe_blood",
-# "jaffe_year",
+# "year",
 # "creatinine_serum_unit",
 # "creatinine_urinary_unit",
 # "urate_unit"
@@ -215,32 +215,7 @@ if (column_bun_serum == "" &&
                      param1 = "column_bun_serum",
                      param2 = "column_urea_serum")
   errors = rbind(errors, error)
-} else if (column_bun_serum != "") {
-  if (!(column_bun_serum %in% colnames(data))) {
-    print(paste("BUN column must be present."))
-    
-    error = data.frame(severity = "ERROR", 
-                       line_number = NA, 
-                       message = "BUN column missing",
-                       param1 = "column_bun_serum",
-                       param2 = column_bun_serum)
-  
-    errors = rbind(errors, error)
-  }
-} else if (column_urea_serum != "") {
-  if (!(column_urea_serum %in% colnames(data))) {
-    print(paste("UREA column must be present."))
-    
-    error = data.frame(severity = "ERROR", 
-                       line_number = NA, 
-                       message = "UREA column missing",
-                       param1 = "column_urea_serum",
-                       param2 = column_urea_serum)
-    
-    errors = rbind(errors, error)
-  }
 }
-
 
 ### CHECK OPTIONAL COLUMNS
 
@@ -248,23 +223,16 @@ for (optional_column in optional_columns) {
   optional_column_name = get(optional_column)
   if (optional_column_name != "") {
     if (!(optional_column_name %in% colnames(data))) {
-      print(paste("Optional column missing (but name was given - maybe remove name):", 
+      print(paste("Optional column missing, fill with NA:", 
                   optional_column, "/", optional_column_name))
-      
-      error = data.frame(severity = "ERROR", 
-                         line_number = NA, 
-                         message = "Optional column missing",
-                         param1 = optional_column,
-                         param2 = optional_column_name)
-      
-      errors = rbind(errors, error)
+      data[, optional_column_name] = NA
     }
   }
 }
 
 # Stop if there are errors
 if (nrow(errors) > 0) {
-  le(errors, error_file, row.names = FALSE, col.names = TRUE, 
+  write.table(errors, error_file, row.names = FALSE, col.names = TRUE, 
               quote = TRUE, sep = ",")
   stop(paste("There are errors such as missing columns.",
              "Please check the error file and the logs.",
@@ -335,7 +303,7 @@ for (column in all_columns) {
 ### UNIT CONVERSIONS
 
 if (jaffe_blood == "1") {
-  if (jaffe_year < "2009") {
+  if (year < "2009") {
     print("Correcting serum creatinine for Jaffe assay before 2009")
     output$creatinine_serum = output$creatinine_serum * 0.95
   }
@@ -396,7 +364,12 @@ if (have_followup_age) {
 ### CALCULATE ADDITIONAL COLUMNS IN OUTPUT
 
 if (column_age_urine == "") {
-  print("Use 'blood' age as 'urine' age as there is no 'age_urine' column.")
+  print("Use 'blood' age column as 'urine' as there is no 'age_urine' column.")
+  output$age_urine = output$age_blood
+}
+
+if (length(which(!is.na(output$age_urine))) == 0) {
+  print("No 'urine' age data available - use 'blood' age.")
   output$age_urine = output$age_blood
 }
 

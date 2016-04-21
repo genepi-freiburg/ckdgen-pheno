@@ -1,180 +1,33 @@
 #####################################################################
-#####################################################################
 # Parameters file for the CKDgen Phenotype Preparation script
 #####################################################################
-#####################################################################
-
 set -a
 
 # Name of your study
 STUDY_NAME="GCKD"
 
-# Family-based study (1) or normal study (0)
+# If your study is twin-, pedigree- or family-based write 1, 0 otherwise
 FAMILY_BASED_STUDY="0"
 
-#####################################################################
-### INPUT AND OUTPUT FILES
-#####################################################################
-
-# Name (and path) of the phenotype input file
-# Please replace with your file name.
+# Name (and path) of YOUR phenotype file: replace with your file name.
 INPUT_FILE="testinput.txt"
 
-# Specify input file delimiter
-# Possible values: COMMA, SEMICOLON, WHITESPACE, TAB, AUTO
-# "AUTO" tries to detect the correct value.
-INPUT_FILE_DELIMITER="AUTO"
-
-# Absolute or relative path to output directory
-# All generated files will be placed in this directory
-# %TIMESTAMP% is replaced by a timestamp
-# %STUDY% is replaced by the study name
-OUTPUT_DIRECTORY="out-%STUDY%"
-
-# Name (and path) of the log file
-# %TIMESTAMP% is replaced by a timestamp
-# %STUDY% is replaced by the study name
-LOG_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.log"
-
-# Name (and path) of the error file
-# Format is CSV, columns: severity, line number, message
-# %TIMESTAMP% is replaced by a timestamp
-# %STUDY% is replaced by the study name
-ERROR_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.errors.csv"
-
-# Name (and path) of the output file
-# Output format is CSV.
-# %TIMESTAMP% is replaced by a timestamp
-# %STUDY% is replaced by the study name
-OUTPUT_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.out.csv"
-
-# Name (and path) of the summary statistics output files
-# Output format is TXT and PDF.
-SUMMARY_OUTPUT_FILE_TXT="ckdgen-pheno-%STUDY%-%TIMESTAMP%.summary.txt"
-SUMMARY_OUTPUT_FILE_PDF="ckdgen-pheno-%STUDY%-%TIMESTAMP%.summary.pdf"
-
-# Name (and path) of the output phenotyp file
-# Output format is tab-separated.
-# %TIMESTAMP% is replaced by a timestamp
-# %STUDY% is replaced by the study name
-PHENOTYPE_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.phenotype.txt"
-
-#####################################################################
-### COLUMN NAMES
-#####################################################################
-# Please adjust the names to fit important columns in your input file
-
-# Study specific individual ID
-COLUMN_INDIVIDUAL_ID="iid"
-
-###------------------------------------------------------------------
-### PATIENT DEMOGRAPHICS
-###------------------------------------------------------------------
-
-# Patient age (years, may have decimals) at timepoint of blood collection
-# for measurements such as creatinine, BUN/urea, uric acid
-# Mandatory.
-COLUMN_AGE_BLOOD="age"
-
-# Patient age (years, may have decimals) at timepoint of urine collection
-# for urinary albumin and creatinine measurements
-# Optional. If not given, will fall back to COLUMN_AGE_BLOOD.
-COLUMN_AGE_URINE=""
-
-# Patient sex (1 = male, 0 = female)
-COLUMN_SEX_MALE="male"
-
-# Race (0 = other ancestry, 1 = African American ("black") ancestry)
-COLUMN_RACE_BLACK="black"
-
-###------------------------------------------------------------------
-### LAB VALUES
-###------------------------------------------------------------------
-
-# Serum creatinine (unit: must be configured below)
-# Optional.
-COLUMN_CREATININE_SERUM="screa"
-
-# Urinary creatinine (unit: must be configured below)
-# Optional (if not available, cannot calculate uacr/upcr)
-COLUMN_CREATININE_URINARY="ucrea"
-
-# Urinary albumin (unit: mg/l)
-# Optional
-COLUMN_ALBUMIN_URINARY="ualb"
-
-# Serum BUN (blood urea nitrogen; unit: mg/dl)
-# Optional, Urea column is used if this column name is empty
-COLUMN_BUN_SERUM=""
-
-# Serum urea (unit: mg/dl)
-# Optional, BUN column is used if this column name is empty
-COLUMN_UREA_SERUM="urea"
-
-# Serum uric acid (unit: must be configured below)
-# Optional.
-COLUMN_URIC_ACID_SERUM="uric_acid"
-
-###------------------------------------------------------------------
-### DIAGNOSES
-###------------------------------------------------------------------
-
-# HTN / Hypertension (0 = no HTN, 1 = HTN, NA = unknown)
-COLUMN_HYPERTENSION="htn"
-
-# DM / Diabetes mellitus (0 = no DM, 1 = DM, NA = unknown)
-COLUMN_DIABETES="diabetes"
-
-# Gout (0 = no, 1 = yes, NA = unknown)
-# Optional.
-COLUMN_GOUT="gout"
-
-###------------------------------------------------------------------
-### EGFR DECLINE PHENOTYPES
-###------------------------------------------------------------------
-
-# if your study has no longitudinal creatinine measurements,
-# you can skip this section and leave the column names empty
-
-# Column name with second serum creatinine measurement
-# Option (leave empty if you don't have serial creatinines)
-# Unit: see CREATININE_SERUM_UNIT
-COLUMN_CREATININE_SERUM_FOLLOWUP="screa_fu2"
-
-# Column name for the age (years, may have decimals) at the blood collection
-# for the follow-up creatinine measurement
-# Optional (but must be given if you set COLUMN_CREATININE_SERUM_FOLLOWUP)
-COLUMN_AGE_BLOOD_FOLLOWUP="age_fu2"
-
-#####################################################################
-### STUDY PARAMETERS
-#####################################################################
-
-# Jaffe assay for creatinine measurement in blood
-# 1 if Jaffe assay used for measurement of creatinine in blood, else 0
+# Jaffe assay for creatinine measurement in blood: 1 = Jaffe; 0 = other
 JAFFE_BLOOD="0"
 
-# year of Jaffe assay; please ask your lab
-# rationale: if the assay was acquired prior to 2009, creatinine needs
-# to be adjusted
-# only need to specify this parameter if JAFFE_BLOOD is "1"
-# format: YYYY
-JAFFE_YEAR="2012"
+# year of serum creatinine laboratory assay: please ask your lab
+# if you don't know, report the year of the study
+YEAR="2012"
 
-# Unit of serum creatinine measurements
-# 0 = umol/l, 1 = mg/dl
+# Unit of SERUM creatinine measurements: 0 = umol/l, 1 = mg/dl
 CREATININE_SERUM_UNIT="1"
 
-# Unit of urinary creatinine measurements (if present)
-# 0 = umol/l, 1 = mg/dl
+# Unit of URINARY creatinine measurement: 0 = umol/l, 1 = mg/dl
 CREATININE_URINARY_UNIT="1"
 
-# Unit of urate measurements
-# 0 = umol/l, 1 = mg/dl
+# Unit of urate measurement: 0 = umol/l, 1 = mg/dl
 URATE_UNIT="1"
 
-# LOD (limit of detection) of urinary albumin assay.
+# LOD (limit of detection) of urinary albumin assay, in mg/L
 # Example: 10 mg/L for HemoCue® and 3 mg/L for ProSpec®
-# Unit: mg/L
-# Optional.
 LOD_URINARY_ALBUMIN=""

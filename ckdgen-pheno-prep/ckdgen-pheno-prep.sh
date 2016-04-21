@@ -18,6 +18,40 @@ then
 	exit 9
 fi
 
+set -a
+
+# Specify input file delimiter: COMMA, SEMICOLON, WHITESPACE, TAB
+INPUT_FILE_DELIMITER="TAB"
+
+# Path specs
+OUTPUT_DIRECTORY="out-%STUDY%"
+LOG_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.log"
+ERROR_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.errors.csv"
+OUTPUT_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.out.csv"
+SUMMARY_OUTPUT_FILE_TXT="ckdgen-pheno-%STUDY%-%TIMESTAMP%.summary.txt"
+SUMMARY_OUTPUT_FILE_PDF="ckdgen-pheno-%STUDY%-%TIMESTAMP%.summary.pdf"
+PHENOTYPE_FILE="ckdgen-pheno-%STUDY%-%TIMESTAMP%.phenotype.txt"
+
+COLUMN_INDIVIDUAL_ID="iid"
+COLUMN_AGE_BLOOD="age_blood"
+COLUMN_AGE_URINE="age_urine"
+COLUMN_SEX_MALE="sex_male"
+COLUMN_RACE_BLACK="race_black"
+
+COLUMN_CREATININE_SERUM="screa"
+COLUMN_CREATININE_URINARY="ucrea"
+COLUMN_ALBUMIN_URINARY="ualb"
+COLUMN_BUN_SERUM="bun"
+COLUMN_UREA_SERUM="urea"
+COLUMN_URIC_ACID_SERUM="uric_acid"
+
+COLUMN_HYPERTENSION="htn"
+COLUMN_DIABETES="diabetes"
+COLUMN_GOUT="gout"
+
+COLUMN_CREATININE_SERUM_FOLLOWUP="screa_fu2"
+COLUMN_AGE_BLOOD_FOLLOWUP="age_fu2"
+
 # check basic parameters
 if [ "$STUDY_NAME" == "" ]
 then
