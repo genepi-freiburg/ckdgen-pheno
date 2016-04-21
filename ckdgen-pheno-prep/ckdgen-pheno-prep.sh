@@ -52,6 +52,17 @@ COLUMN_GOUT="gout"
 COLUMN_CREATININE_SERUM_FOLLOWUP="screa_fu2"
 COLUMN_AGE_BLOOD_FOLLOWUP="age_fu2"
 
+# export parameters (to avoid "set -a" in params file)
+export STUDY_NAME
+export FAMILY_BASED_STUDY
+export INPUT_FILE
+export JAFFE_BLOOD
+export YEAR
+export CREATININE_SERUM_UNIT
+export CREATININE_URINARY_UNIT
+export URATE_UNIT
+export LOD_URINARY_ALBUMIN
+
 # check basic parameters
 if [ "$STUDY_NAME" == "" ]
 then
