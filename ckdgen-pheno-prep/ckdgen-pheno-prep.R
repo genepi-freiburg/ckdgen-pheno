@@ -600,7 +600,7 @@ for (i in 1:nrow(transformations)) {
   }
   
   # Residual generation
-  missingness = calc_missingness(ln_transform_variable)
+  missingness = calc_missingness(variable)
   if (missingness < 1.0) {
     print(paste("Calculating residuals using formula ", formula_chars,
                 " for variable: ", variable, sep = ""))
