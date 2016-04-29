@@ -267,6 +267,7 @@ for (column in all_columns) {
     med = summ[3],
     q3 = summ[5],
     max = summ[6],
+    n = length(which(!is.na(data[,column_name]))),
     na = ifelse(is.na(summ[7]), 0, summ[7]),
     mean = summ[4],
     sd = sd(data[,column_name], na.rm = T),
