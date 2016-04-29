@@ -16,4 +16,4 @@ Usage instructions
 
 
 The script has been tested both on Linux and Windows systems.
-For Windows, please use Cygwin and ensure "RStudio" is in your PATH.
+For Windows, please use Cygwin and ensure "Rscript" is in your PATH.
