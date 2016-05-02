@@ -1,3 +1,5 @@
 TODO
 
 - debug script with simplified parameters file
+- column names should be case-insensitive
+- warn for (unknown) columns
