@@ -156,6 +156,15 @@ optional_columns = c(
 
 all_columns = c(mandatory_columns, optional_columns)
 
+### MAKE COLUMN NAMES CASE-INSENSITIVE
+
+orig_colnames = colnames(data)
+new_colnames = tolower(orig_colnames)
+colnames(data) = new_colnames
+if (length(which(new_colnames != orig_colnames)) > 0) {
+  print(paste("Changed upper/mixed case column name to lowercase: ",
+        orig_colnames[which(new_colnames != orig_colnames)], sep = ""))
+}
 
 ### CHECK MANDATORY COLUMNS
 
@@ -231,7 +240,6 @@ if (length(which(!is.na(data[, column_age_blood]))) == 0 &&
 unnecessary_columns = colnames(data)
 for (column in all_columns) {
   column_name = get(column)
-  print(paste("examine", column_name))
   unnecessary_columns = unnecessary_columns[which(unnecessary_columns != column_name)]
 }
 for (column in unnecessary_columns) {
