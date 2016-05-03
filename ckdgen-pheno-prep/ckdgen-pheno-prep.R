@@ -226,6 +226,24 @@ if (length(which(!is.na(data[, column_age_blood]))) == 0 &&
   errors = rbind(errors, error)
 }
 
+# CHECK FOR UNNECESSARY COLUMNS
+
+unnecessary_columns = colnames(data)
+for (column in all_columns) {
+  column_name = get(column)
+  print(paste("examine", column_name))
+  unnecessary_columns = unnecessary_columns[which(unnecessary_columns != column_name)]
+}
+for (column in unnecessary_columns) {
+  print(paste("Unnecessary column: ", column, sep = ""))
+  error = data.frame(severity = "ERROR", 
+                     line_number = NA, 
+                     message = "Unnecessary column",
+                     param1 = column,
+                     param2 = NA)
+  errors = rbind(errors, error)
+}
+
 # Stop if there are errors
 if (nrow(errors) > 0) {
   write.table(errors, error_file, row.names = FALSE, col.names = TRUE, 
