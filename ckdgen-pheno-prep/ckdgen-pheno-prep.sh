@@ -49,8 +49,8 @@ COLUMN_HYPERTENSION="htn"
 COLUMN_DIABETES="diabetes"
 COLUMN_GOUT="gout"
 
-COLUMN_CREATININE_SERUM_FOLLOWUP="screa_fu2"
-COLUMN_AGE_BLOOD_FOLLOWUP="age_fu2"
+COLUMN_CREATININE_SERUM_FOLLOWUP="screa_fu"
+COLUMN_AGE_BLOOD_FOLLOWUP="age_fu"
 
 # export parameters (to avoid "set -a" in params file)
 export STUDY_NAME
