@@ -1,5 +1,4 @@
 TODO
 
-- debug script with simplified parameters file
-- column names should be case-insensitive
-- warn for (unknown) columns
+- Jaffe for follow-up (combine two variables to one?)
+- ?diabetes_blood / ?diabetes_urine
