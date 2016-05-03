@@ -265,13 +265,25 @@ summary_statistics = data.frame()
 for (column in all_columns) {
   column_name = get(column)
   if (column_name == "") {
-    # skip summaries for optional column
-    next;
+    # skip summaries for optional and non-present column
+    next
   }
   
   if (column == "column_individual_id") {
     # no summaries for individual ID column
-    next;
+    next
+  }
+  
+  if (length(which(!is.na(data[,column_name]))) == 0) {
+    # column is completely NA
+    summary_statistics = rbind(summary_statistics, data.frame(
+      variable = column2variable(column),
+      min = NA, q1 = NA, med = NA, q3 = NA, max = NA,
+      n = 0, na = nrow(data),
+      mean = NA, sd = NA,
+      kurtosis = NA, skewness = NA
+    ))
+    next
   }
   
   print(paste("Summary for", column))
