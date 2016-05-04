@@ -1,4 +1,8 @@
 TODO
 
 - Jaffe for follow-up (combine two variables to one?)
-- ?diabetes_blood / ?diabetes_urine
+
+- age_blood => age_screa, age_bun_urea, age_uacid_gout
+- age_urine
+- diabetes => diabetes_screa, diabetes_urine, diabetes_bun_urea
+- hypertension => ?
