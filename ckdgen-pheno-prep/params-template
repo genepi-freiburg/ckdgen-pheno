@@ -9,7 +9,7 @@ STUDY_NAME="GCKD"
 FAMILY_BASED_STUDY="0"
 
 # Name (and path) of YOUR phenotype file: replace with your file name.
-INPUT_FILE="testinput.txt"
+INPUT_FILE="phenotype.txt"
 
 # Jaffe assay for creatinine measurement in blood: 1 = Jaffe; 0 = other; may be empty
 JAFFE_BLOOD="0"
