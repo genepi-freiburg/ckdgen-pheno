@@ -30,3 +30,9 @@ URATE_UNIT="1"
 # LOD (limit of detection) of urinary albumin assay, in mg/L
 # Example: 10 mg/L for HemoCue® and 3 mg/L for ProSpec®
 LOD_URINARY_ALBUMIN=""
+
+# Jaffe assay for follow-up creatinine measurement in blood: 1 = Jaffe; 0 = other; may be empty
+JAFFE_BLOOD_FOLLOWUP="0"
+
+# year of serum creatinine laboratory assay (followup)
+YEAR_FOLLOWUP="2014"

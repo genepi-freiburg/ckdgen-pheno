@@ -37,6 +37,8 @@ errors = data.frame()
 
 jaffe_blood = Sys.getenv("JAFFE_BLOOD")
 year = Sys.getenv("YEAR")
+jaffe_blood_followup = Sys.getenv("JAFFE_BLOOD_FOLLOWUP")
+year_followup = Sys.getenv("YEAR_FOLLOWUP")
 creatinine_serum_unit = Sys.getenv("CREATININE_SERUM_UNIT")
 creatinine_urinary_unit = Sys.getenv("CREATININE_URINARY_UNIT")
 urate_unit = Sys.getenv("URATE_UNIT")
@@ -354,6 +356,13 @@ if (jaffe_blood == "1") {
   if (year < "2009") {
     print("Correcting serum creatinine for Jaffe assay before 2009")
     output$creatinine_serum = output$creatinine_serum * 0.95
+  }
+}
+
+if (jaffe_blood_followup == "1") {
+  if (year_followup < "2009") {
+    print("Correcting serum creatinine (follow-up) for Jaffe assay before 2009")
+    output$creatinine_serum_followup = output$creatinine_serum_followup * 0.95
   }
 }
 
