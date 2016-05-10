@@ -54,11 +54,6 @@ mandatory_params = c(
   "output_file",
   "summary_output_file_txt",
   "summary_output_file_pdf"
-# "jaffe_blood",
-# "year",
-# "creatinine_serum_unit",
-# "creatinine_urinary_unit",
-# "urate_unit"
 )
 
 for (mandatory_param in mandatory_params) {
@@ -79,6 +74,24 @@ if (nchar(as.character(lod_urinary_albumin)) > 0) {
 }
 
 print("All mandatory parameters are present.")
+
+### DUMP PARAMETERS
+
+all_params = c(
+  "jaffe_blood",
+  "year",
+  "jaffe_blood_followup",
+  "year_followup",
+  "creatinine_serum_unit",
+  "creatinine_urinary_unit",
+  "urate_unit",
+  "lod_urinary_albumin"
+)
+
+for (param in all_params) {
+  print(paste("Param '", param, "': Value = '", get(param), "'", sep = ""))
+}
+
 
 ### READ INPUT FILE
 
