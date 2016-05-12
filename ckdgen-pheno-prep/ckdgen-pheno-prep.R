@@ -1,4 +1,5 @@
 ### SOURCE FUNCTIONS FILE
+
 initial_options = commandArgs(trailingOnly = FALSE)
 file_arg_name = "--file="
 script_name = sub(file_arg_name, "", initial_options[grep(file_arg_name, 
@@ -77,6 +78,7 @@ if (nchar(as.character(lod_urinary_albumin)) > 0) {
 
 print("All mandatory parameters are present.")
 
+
 ### DUMP PARAMETERS
 
 all_params = c(
@@ -131,8 +133,12 @@ if (nrow(data) < 100 || ncol(data) < 10) {
 ### Column names
 
 column_individual_id = Sys.getenv("COLUMN_INDIVIDUAL_ID")
-column_age_blood = Sys.getenv("COLUMN_AGE_BLOOD")
+column_age_crea_serum = Sys.getenv("COLUMN_AGE_CREA_SERUM")
+column_age_bun_urea = Sys.getenv("COLUMN_AGE_BUN_UREA")
+column_age_uric_acid = Sys.getenv("COLUMN_AGE_URIC_ACID")
+column_age_gout = Sys.getenv("COLUMN_AGE_GOUT")
 column_age_urine = Sys.getenv("COLUMN_AGE_URINE")
+column_age_blood_followup = Sys.getenv("COLUMN_AGE_BLOOD_FOLLOWUP")
 column_sex_male = Sys.getenv("COLUMN_SEX_MALE")
 column_race_black = Sys.getenv("COLUMN_RACE_BLACK")
 column_creatinine_serum = Sys.getenv("COLUMN_CREATININE_SERUM")
@@ -142,22 +148,25 @@ column_bun_serum = Sys.getenv("COLUMN_BUN_SERUM")
 column_urea_serum = Sys.getenv("COLUMN_UREA_SERUM")
 column_uric_acid_serum = Sys.getenv("COLUMN_URIC_ACID_SERUM")
 column_hypertension = Sys.getenv("COLUMN_HYPERTENSION")
-column_diabetes = Sys.getenv("COLUMN_DIABETES")
+column_diabetes_crea_serum = Sys.getenv("COLUMN_DIABETES_CREA_SERUM")
+column_diabetes_bun_urea = Sys.getenv("COLUMN_DIABETES_BUN_UREA")
+column_diabetes_urine = Sys.getenv("COLUMN_DIABETES_URINE")
 column_gout = Sys.getenv("COLUMN_GOUT")
 column_creatinine_serum_followup = Sys.getenv("COLUMN_CREATININE_SERUM_FOLLOWUP")
-column_age_blood_followup = Sys.getenv("COLUMN_AGE_BLOOD_FOLLOWUP")
 
 mandatory_columns = c(
   "column_individual_id",
   "column_sex_male",
   "column_race_black",
-  "column_diabetes",
   "column_hypertension"
 )
 
 optional_columns = c(
-  "column_age_blood",
-  "column_age_urine",
+  "column_age_crea_serum",
+  "column_age_bun_urea",
+  "column_age_uric_acid",
+  "column_age_gout",
+  "column_age_blood_followup",
   "column_creatinine_serum",
   "column_uric_acid_serum",
   "column_creatinine_urinary",
@@ -165,11 +174,14 @@ optional_columns = c(
   "column_bun_serum",
   "column_urea_serum",
   "column_creatinine_serum_followup",
-  "column_age_blood_followup",
+  "column_diabetes_crea_serum",
+  "column_diabetes_bun_urea",
+  "column_diabetes_urine",
   "column_gout"
 )
 
 all_columns = c(mandatory_columns, optional_columns)
+
 
 ### MAKE COLUMN NAMES CASE-INSENSITIVE
 
@@ -180,6 +192,7 @@ if (length(which(new_colnames != orig_colnames)) > 0) {
   print(paste("Changed upper/mixed case column name to lowercase: ",
         orig_colnames[which(new_colnames != orig_colnames)], sep = ""))
 }
+
 
 ### CHECK MANDATORY COLUMNS
 
@@ -212,7 +225,8 @@ for (mandatory_column in mandatory_columns) {
   }
 }
 
-# Check BUN/UREA
+
+### CHECK BUN/UREA COLUMN NAME PARAMETERS
 
 if (column_bun_serum == "" &&
     column_urea_serum == "") {
@@ -224,6 +238,7 @@ if (column_bun_serum == "" &&
                      param2 = "column_urea_serum")
   errors = rbind(errors, error)
 }
+
 
 ### CHECK OPTIONAL COLUMNS
 
@@ -238,19 +253,130 @@ for (optional_column in optional_columns) {
   }
 }
 
-# we need at least data for one age column
-if (length(which(!is.na(data[, column_age_blood]))) == 0 &&
-    length(which(!is.na(data[, column_age_urine]))) == 0) {
-  print("Need data for 'age_blood' or 'age_urine'.")
-  error = data.frame(severity = "ERROR", 
-                     line_number = NA, 
-                     message = "Baseline age data missing",
-                     param1 = column_age_blood,
-                     param2 = column_age_urine)
-  errors = rbind(errors, error)
+
+### CHECK AGE MISSINGNESS
+
+check_missing_age = function(name, have_pheno, have_age) {
+  if (have_pheno && !have_age) {
+    print(paste("ERROR: Age column missing, but phenotype present:", name))
+    error = data.frame(severity = "ERROR", 
+                       line_number = NA, 
+                       message = "Age column missing, but phenotype present",
+                       param1 = name,
+                       param2 = "")
+    errors <<- rbind(errors, error)
+  }
+  if (!have_pheno && have_age) {
+    print(paste("INFO: Phenotype column missing, but age present:", name))
+  }
 }
 
-# CHECK FOR UNNECESSARY COLUMNS
+have_pheno_urine = length(which(!is.na(data[, column_creatinine_urinary]))) > 0 ||
+  length(which(!is.na(data[, column_albumin_urinary]))) > 0
+have_pheno_crea = length(which(!is.na(data[, column_creatinine_serum]))) > 0
+have_pheno_bun_urea = length(which(!is.na(data[, column_bun_serum]))) > 0 ||
+  length(which(!is.na(data[, column_urea_serum]))) > 0
+have_pheno_uric_acid = length(which(!is.na(data[, column_uric_acid_serum]))) > 0
+have_pheno_gout = length(which(!is.na(data[, column_age_gout]))) > 0
+have_pheno_followup = length(which(!is.na(data[, column_creatinine_serum_followup]))) > 0
+
+have_age_urine = length(which(!is.na(data[, column_age_urine]))) > 0
+have_age_crea = length(which(!is.na(data[, column_age_crea_serum]))) > 0
+have_age_bun_urea = length(which(!is.na(data[, column_age_bun_urea]))) > 0
+have_age_uric_acid = length(which(!is.na(data[, column_age_uric_acid]))) > 0
+have_age_gout = length(which(!is.na(data[, column_age_gout]))) > 0
+have_age_followup = length(which(!is.na(data[, column_age_blood_followup]))) > 0
+
+check_missing_age("urinary creatinine/albumin", have_pheno_urine, have_age_urine)
+check_missing_age("serum creatinine", have_pheno_crea, have_age_crea)
+check_missing_age("BUN/urea", have_pheno_bun_urea, have_age_bun_urea)
+check_missing_age("uric acid", have_pheno_uric_acid, have_age_uric_acid)
+check_missing_age("gout", have_pheno_gout, have_age_gout)
+check_missing_age("followup serum creatinine", have_pheno_followup, have_age_followup)
+
+
+### CHECK DIABETES MISSINGNESS
+
+check_missing_diabetes = function(name, have_pheno, have_diabetes) {
+  if (have_pheno && !have_diabetes) {
+    print(paste("ERROR: Age column missing, but phenotype present:", name))
+    error = data.frame(severity = "ERROR", 
+                       line_number = NA, 
+                       message = "Diabetes column missing, but phenotype present",
+                       param1 = name,
+                       param2 = "")
+    errors <<- rbind(errors, error)
+  }
+  if (!have_pheno && have_diabetes) {
+    print(paste("INFO: Phenotype column missing, but diabetes present:", name))
+  }
+}
+
+have_diabetes_crea = length(which(!is.na(data[, column_diabetes_crea_serum])))
+have_diabetes_bun_urea = length(which(!is.na(data[, column_diabetes_bun_urea])))
+have_diabetes_urine = length(which(!is.na(data[, column_diabetes_urine])))
+
+check_missing_diabetes("urinary creatinine/albumin", have_pheno_urine, have_diabetes_urine)
+check_missing_diabetes("serum creatinine", have_pheno_crea, have_diabetes_crea)
+check_missing_diabetes("BUN/urea", have_pheno_bun_urea, have_diabetes_bun_urea)
+
+
+### CHECK URINARY CREATININE / ALBUMIN
+
+have_pheno_urine_crea = length(which(!is.na(data[, column_creatinine_urinary]))) > 0
+have_pheno_urine_albu = length(which(!is.na(data[, column_albumin_urinary]))) > 0
+if (have_pheno_urine_crea && !have_pheno_urine_albu ||
+    !have_pheno_urine_cera && have_pheno_urine_albu) {
+  print(paste("ERROR: Urinary creatinine without albumine, or vice-versa."))
+  error = data.frame(severity = "ERROR", 
+                     line_number = NA, 
+                     message = "Urinary creatinine without albumine, or vice-versa.",
+                     param1 = name,
+                     param2 = "")
+  errors <- rbind(errors, error)
+}
+
+
+### CHECK FOLLOWUP CONSISTENCY
+
+add_error = function(message) {
+  print(paste("ERROR:", message))
+  error = data.frame(severity = "ERROR", 
+                     line_number = NA, 
+                     message = message,
+                     param1 = "",
+                     param2 = "")
+  errors <<- rbind(errors, error)
+}
+
+have_followup_data = have_age_followup && have_pheno_followup
+if (have_followup_data) {
+  print("Follow-up data available.")
+} else {
+  print("No follow-up data available.")
+}
+
+if (have_followup_data) {
+  if (!have_age_crea) {
+    add_error("Follow-up data available, but no baseline serum creatinine age.")
+  }
+  
+  if (!have_pheno_crea) {
+    add_error("Follow-up data available, but no baseline serum creatinine phenotype.")
+  }
+  
+  if (have_age_crea && have_pheno_crea) {
+    followup_age_before_baseline = which(output$age_blood_followup < output$age_crea_serum)
+    if (length(followup_age_before_baseline) > 0) {
+      print(paste("Follow-up age is before baseline for records: ", 
+                  followup_age_before_baseline, sep = ""))
+      add_error("Inconsistent follow-up age: Less than baseline age.")
+    }
+  }
+}
+
+
+### CHECK FOR UNNECESSARY COLUMNS
 
 unnecessary_columns = colnames(data)
 for (column in all_columns) {
@@ -267,7 +393,9 @@ for (column in unnecessary_columns) {
   errors = rbind(errors, error)
 }
 
-# Stop if there are errors
+
+### STOP IF THERE ARE MESSAGES
+
 if (nrow(errors) > 0) {
   write.table(errors, error_file, row.names = FALSE, col.names = TRUE, 
               quote = TRUE, sep = ",")
@@ -333,7 +461,7 @@ write.table(summary_statistics, summary_output_file_txt, row.names = FALSE,
             col.names = TRUE, quote = TRUE, sep = ",")
 
 
-### GENERATE OUTPUT DATA SET FROM INPUT
+### PREPARE OUTPUT DATA SET FROM INPUT
 
 output = data.frame(index=1:nrow(data))
 for (column in all_columns) {
@@ -396,62 +524,10 @@ if (creatinine_urinary_unit == "" && length(which(is.na(output$creatinine_urinar
 
 summary(output)
 
-have_followup_crea = length(which(!is.na(output$creatinine_serum_followup))) > 0
-have_followup_age = length(which(!is.na(output$age_blood_followup))) > 0
-if (have_followup_crea && !have_followup_age) {
-  stop("Follow-up creatinine present, but no follow-up age.")
-} else if (have_followup_age && !have_followup_crea) {
-  stop("Follow-up age present, but no follow-up creatinine.")
-}
-
-have_followup_data = have_followup_crea && have_followup_age
-if (have_followup_data) {
-  print("Follow-up data available.")
-} else {
-  print("No follow-up data available.")
-}
-
-followup_crea_na = which(is.na(output$creatinine_serum_followup))
-followup_age_na = which(is.na(output$age_blood_followup))
-if (length(followup_crea_na) != length(followup_age_na) ||
-    length(which(followup_crea_na != followup_age_na)) > 0) {
-  print("WARNING: Non-corresponding NA values for follow-up creatinine/age.")
-  print("NA values for follow-up eGFR will be generated for the union.")
-  print(paste("Follow-up creatinine is NA for record count: ", length(followup_crea_na), sep = ""))
-  print(paste("Follow-up age is NA for record count: ", length(followup_age_na), sep = ""))
-}
-
-if (have_followup_age) {
-  followup_age_before_baseline = which(output$age_blood_followup < output$age_blood)
-  if (length(followup_age_before_baseline)) {
-    print(paste("Follow-up age is before baseline for records: ", 
-                followup_age_before_baseline, sep = ""))
-    stop("Follow-up age less than baseline age.")
-  }
-}
 
 ### CALCULATE ADDITIONAL COLUMNS IN OUTPUT
 
-# check/complete age columns
-if (column_age_urine == "") {
-  print("Use 'blood' age column as 'urine' as there is no 'age_urine' column.")
-  output$age_urine = output$age_blood
-}
-
-if (column_age_blood == "") {
-  print("Use 'urine' age column as 'blood' as there is no 'age_blood' column.")
-  output$age_blood = output$age_urine
-}
-
-if (length(which(!is.na(output$age_urine))) == 0) {
-  print("No 'urine' age data available - use 'blood' age.")
-  output$age_urine = output$age_blood
-}
-
-if (length(which(!is.na(output$age_blood))) == 0) {
-  print("No 'blood' age data available - use 'urine' age.")
-  output$age_blood = output$age_urine
-}
+# TODO USE CORRECT AGES!!!!
 
 # calculate UACR
 print("Calculating UACR")
@@ -510,6 +586,7 @@ if (have_followup_data) {
 }
 
 # stratify creatinine, eGFR, CKD, gout, uric acid
+# TODO USE CORRECT DIABETES!!!!
 output$creat_nondm = ifelse(output$diabetes == "1", NA, output$creatinine_serum)
 output$creat_dm = ifelse(output$diabetes == "1", output$creatinine_serum, NA)
 
@@ -536,6 +613,8 @@ output$gout_female = ifelse(output$sex_male == "1", NA, output$gout)
 
 # stratify followup data
 if (have_followup_data) {
+  # TODO USE CORRECT DIABETES!!!!
+  
   output$ckdi_nondm = ifelse(output$diabetes == "1", NA, output$ckdi)
   output$ckdi_dm = ifelse(output$diabetes == "1", output$ckdi, NA)
 
