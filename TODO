@@ -2,3 +2,4 @@ TODO
 
 - age_blood => split: age_screa, age_bun_urea, age_uacid, age_gout (age_urine, age_followup unchanged)
 - diabetes => split: diabetes_screa, diabetes_urine, diabetes_bun_urea
+- test
