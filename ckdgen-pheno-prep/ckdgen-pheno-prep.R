@@ -166,6 +166,7 @@ optional_columns = c(
   "column_age_bun_urea",
   "column_age_uric_acid",
   "column_age_gout",
+  "column_age_urine",
   "column_age_blood_followup",
   "column_creatinine_serum",
   "column_uric_acid_serum",
@@ -326,7 +327,7 @@ check_missing_diabetes("BUN/urea", have_pheno_bun_urea, have_diabetes_bun_urea)
 have_pheno_urine_crea = length(which(!is.na(data[, column_creatinine_urinary]))) > 0
 have_pheno_urine_albu = length(which(!is.na(data[, column_albumin_urinary]))) > 0
 if (have_pheno_urine_crea && !have_pheno_urine_albu ||
-    !have_pheno_urine_cera && have_pheno_urine_albu) {
+    !have_pheno_urine_crea && have_pheno_urine_albu) {
   print(paste("ERROR: Urinary creatinine without albumine, or vice-versa."))
   error = data.frame(severity = "ERROR", 
                      line_number = NA, 
@@ -366,7 +367,7 @@ if (have_followup_data) {
   }
   
   if (have_age_crea && have_pheno_crea) {
-    followup_age_before_baseline = which(output$age_blood_followup < output$age_crea_serum)
+    followup_age_before_baseline = which(data[, column_age_blood_followup] < data[, column_age_crea_serum])
     if (length(followup_age_before_baseline) > 0) {
       print(paste("Follow-up age is before baseline for records: ", 
                   followup_age_before_baseline, sep = ""))
@@ -513,6 +514,10 @@ if (creatinine_serum_unit == "" && length(which(is.na(output$creatinine_serum)))
   print("WARNING: You have creatinine_serum data, but did not give an unit. Assuming mg/dl.")
 }
 
+if (creatinine_serum_unit == "" && length(which(is.na(output$creatinine_serum_followup))) > 0) {
+  print("WARNING: You have creatinine_serum_followup data, but did not give an unit. Assuming mg/dl.")
+}
+
 if (creatinine_urinary_unit == "0") {
   print("Convert urinary creatinine from umol/l to mg/dl")
   output$creatinine_urinary = output$creatinine_urinary / 88.4
@@ -527,8 +532,6 @@ summary(output)
 
 ### CALCULATE ADDITIONAL COLUMNS IN OUTPUT
 
-# TODO USE CORRECT AGES!!!!
-
 # calculate UACR
 print("Calculating UACR")
 output$albumin_urinary_lod = ifelse(output$albumin_urinary < lod_urinary_albumin, 
@@ -538,7 +541,7 @@ output$uacr = output$albumin_urinary_lod / output$creatinine_urinary * 100
 # calculate eGFR (CKDEpi)
 print("Calculating eGFR creat (CKDEpi)")
 output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, 
-                                        output$age_blood, output$race_black)
+                                        output$age_crea_serum, output$race_black)
 
 # calculate eGFR (CKDEpi) on followup
 if (have_followup_data) {
@@ -546,7 +549,7 @@ if (have_followup_data) {
   output$egfr_ckdepi_followup = CKDEpi.creat(output$creatinine_serum_followup, output$sex_male,
                                         output$age_blood_followup, output$race_black)
 } else {
-  print("No followup creatinine available.")
+  print("No followup creatinine/age available.")
   output$egfr_ckdepi_followup = NA
 }
 
@@ -577,7 +580,7 @@ output[uacr_medium, "microalbuminuria"] = NA
 # calculate longitudinal phenotypes
 if (have_followup_data) {
   print("calculate longitudinal phenotypes")
-  time_diff = output$age_blood_followup - output$age_blood
+  time_diff = output$age_blood_followup - output$age_crea_serum
   check.decline.variables(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
   output$ckdi = calc_CKDi(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
   output$ckdi25 = calc_CKDi25(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
@@ -586,24 +589,23 @@ if (have_followup_data) {
 }
 
 # stratify creatinine, eGFR, CKD, gout, uric acid
-# TODO USE CORRECT DIABETES!!!!
-output$creat_nondm = ifelse(output$diabetes == "1", NA, output$creatinine_serum)
-output$creat_dm = ifelse(output$diabetes == "1", output$creatinine_serum, NA)
+output$creat_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$creatinine_serum)
+output$creat_dm = ifelse(output$diabetes_crea_serum == "1", output$creatinine_serum, NA)
 
-output$egfr_ckdepi_creat_nondm = ifelse(output$diabetes == "1", NA, output$egfr_ckdepi_creat)
-output$egfr_ckdepi_creat_dm = ifelse(output$diabetes == "1", output$egfr_ckdepi_creat, NA)
+output$egfr_ckdepi_creat_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$egfr_ckdepi_creat)
+output$egfr_ckdepi_creat_dm = ifelse(output$diabetes_crea_serum == "1", output$egfr_ckdepi_creat, NA)
 
-output$ckd_nondm = ifelse(output$diabetes == "1", NA, output$ckd)
-output$ckd_dm = ifelse(output$diabetes == "1", output$ckd, NA)
+output$ckd_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$ckd)
+output$ckd_dm = ifelse(output$diabetes_crea_serum == "1", output$ckd, NA)
 
-output$bun_serum_nondm = ifelse(output$diabetes == "1", NA, output$bun_serum)
-output$bun_serum_dm = ifelse(output$diabetes == "1", output$bun_serum, NA)
+output$bun_serum_nondm = ifelse(output$diabetes_bun_urea == "1", NA, output$bun_serum)
+output$bun_serum_dm = ifelse(output$diabetes_bun_urea == "1", output$bun_serum, NA)
 
-output$uacr_nondm = ifelse(output$diabetes == "1", NA, output$uacr)
-output$uacr_dm = ifelse(output$diabetes == "1", output$uacr, NA)
+output$uacr_nondm = ifelse(output$diabetes_urine == "1", NA, output$uacr)
+output$uacr_dm = ifelse(output$diabetes_urine == "1", output$uacr, NA)
 
-output$microalbuminuria_nondm = ifelse(output$diabetes == "1", NA, output$microalbuminuria)
-output$microalbuminuria_dm = ifelse(output$diabetes == "1", output$microalbuminuria, NA)
+output$microalbuminuria_nondm = ifelse(output$diabetes_urine == "1", NA, output$microalbuminuria)
+output$microalbuminuria_dm = ifelse(output$diabetes_urine == "1", output$microalbuminuria, NA)
 
 output$uric_acid_serum_male = ifelse(output$sex_male == "1", output$uric_acid_serum, NA)
 output$uric_acid_serum_female = ifelse(output$sex_male == "1", NA, output$uric_acid_serum)
@@ -613,19 +615,17 @@ output$gout_female = ifelse(output$sex_male == "1", NA, output$gout)
 
 # stratify followup data
 if (have_followup_data) {
-  # TODO USE CORRECT DIABETES!!!!
-  
-  output$ckdi_nondm = ifelse(output$diabetes == "1", NA, output$ckdi)
-  output$ckdi_dm = ifelse(output$diabetes == "1", output$ckdi, NA)
+  output$ckdi_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$ckdi)
+  output$ckdi_dm = ifelse(output$diabetes_crea_serum == "1", output$ckdi, NA)
 
-  output$ckdi25_nondm = ifelse(output$diabetes == "1", NA, output$ckdi25)
-  output$ckdi25_dm = ifelse(output$diabetes == "1", output$ckdi25, NA)
+  output$ckdi25_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$ckdi25)
+  output$ckdi25_dm = ifelse(output$diabetes_crea_serum == "1", output$ckdi25, NA)
 
-  output$egfr_decline_nondm = ifelse(output$diabetes == "1", NA, output$egfr_decline)
-  output$egfr_decline_dm = ifelse(output$diabetes == "1", output$egfr_decline, NA)
+  output$egfr_decline_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$egfr_decline)
+  output$egfr_decline_dm = ifelse(output$diabetes_crea_serum == "1", output$egfr_decline, NA)
 
-  output$rapid3_nondm = ifelse(output$diabetes == "1", NA, output$rapid3)
-  output$rapid3_dm = ifelse(output$diabetes == "1", output$rapid3, NA)
+  output$rapid3_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$rapid3)
+  output$rapid3_dm = ifelse(output$diabetes_crea_serum == "1", output$rapid3, NA)
 }
 
 # check stratum size
@@ -655,6 +655,8 @@ if (have_followup_data) {
     "ckdi_dm",
     "ckdi25_nondm",
     "ckdi25_dm",
+    "egfr_decline_nondm",
+    "egfr_decline_dm",
     "rapid3_nondm",
     "rapid3_dm"
   )
@@ -692,33 +694,33 @@ add_transform = function (formula, transform, postprocess) {
 transformations = data.frame()
 
 # rank-based inverse normal transformation for: log UACR
-add_transform("uacr ~ age_urine + sex_male + diabetes", "ln", "invnorm")
+add_transform("uacr ~ age_urine + sex_male + diabetes_urine", "ln", "invnorm")
 add_transform("uacr_nondm ~ age_urine + sex_male", "ln", "invnorm")
 add_transform("uacr_dm ~ age_urine + sex_male", "ln", "invnorm")
 
 # log-transform and calculate residuals for: creatinine, BUN, eGFR
-add_transform("creatinine_serum ~ age_blood + sex_male + diabetes", "ln", "none")
-add_transform("creat_nondm ~ age_blood + sex_male", "ln", "none")
-add_transform("creat_dm ~ age_blood + sex_male", "ln", "none")
+add_transform("creatinine_serum ~ age_crea_serum + sex_male + diabetes_crea_serum", "ln", "none")
+add_transform("creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
+add_transform("creat_dm ~ age_crea_serum + sex_male", "ln", "none")
 
-add_transform("bun_serum ~ age_blood + sex_male + diabetes", "ln", "none")
-add_transform("bun_serum_nondm ~ age_blood + sex_male", "ln", "none")
-add_transform("bun_serum_dm ~ age_blood + sex_male", "ln", "none")
+add_transform("bun_serum ~ age_bun_urea + sex_male + diabetes_bun_urea", "ln", "none")
+add_transform("bun_serum_nondm ~ age_bun_urea + sex_male", "ln", "none")
+add_transform("bun_serum_dm ~ age_bun_urea + sex_male", "ln", "none")
 
-add_transform("egfr_ckdepi_creat ~ age_blood + sex_male + diabetes", "ln", "none")
-add_transform("egfr_ckdepi_creat_nondm ~ age_blood + sex_male", "ln", "none")
-add_transform("egfr_ckdepi_creat_dm ~ age_blood + sex_male", "ln", "none")
+add_transform("egfr_ckdepi_creat ~ age_crea_serum + sex_male + diabetes_crea_serum", "ln", "none")
+add_transform("egfr_ckdepi_creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
+add_transform("egfr_ckdepi_creat_dm ~ age_crea_serum + sex_male", "ln", "none")
 
 if (have_followup_data) {
-  add_transform("egfr_decline ~ age_blood + sex_male + diabetes", "none", "none")
-  add_transform("egfr_decline_nondm ~ age_blood + sex_male", "none", "none")
-  add_transform("egfr_decline_dm ~ age_blood + sex_male", "none", "none")
+  add_transform("egfr_decline ~ age_crea_serum + sex_male + diabetes_crea_serum", "none", "none")
+  add_transform("egfr_decline_nondm ~ age_crea_serum + sex_male", "none", "none")
+  add_transform("egfr_decline_dm ~ age_crea_serum + sex_male", "none", "none")
 }
 
 # no transformation for: uric_acid
-add_transform("uric_acid_serum ~ age_blood + sex_male", "none", "none")
-add_transform("uric_acid_serum_female ~ age_blood", "none", "none")
-add_transform("uric_acid_serum_male ~ age_blood", "none", "none")
+add_transform("uric_acid_serum ~ age_uric_acid + sex_male", "none", "none")
+add_transform("uric_acid_serum_female ~ age_uric_acid", "none", "none")
+add_transform("uric_acid_serum_male ~ age_uric_acid", "none", "none")
 
 for (i in 1:nrow(transformations)) {
   variable = as.character(transformations[i, "variable"])
@@ -866,8 +868,13 @@ for (variable_name in colnames(output)) {
   }
 }
 
-check_median_by_range("age_blood", 1, 100)
+check_median_by_range("age_crea_serum", 1, 100)
+check_median_by_range("age_bun_urea", 1, 100)
+check_median_by_range("age_uric_acid", 1, 100)
+check_median_by_range("age_gout", 1, 100)
+check_median_by_range("age_blood_followup", 1, 100)
 check_median_by_range("age_urine", 1, 100)
+
 check_median_by_range("creatinine_serum", 0.5, 2.5)
 check_median_by_range("albumin_urinary", 0, 200)
 check_median_by_range("creatinine_urinary", 0, 200)
@@ -876,12 +883,13 @@ check_median_by_range("uacr", 0, 200)
 check_median_by_range("bun_serum", 10, 100)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 check_median_by_range("creatinine_serum_followup", 0.5, 2.5)
-check_median_by_range("age_blood_followup", 1, 100)
 
 check_categorial("sex_male", c(0, 1))
 check_categorial("race_black", c(0, 1))
 check_categorial("hypertension", c(0, 1))
-check_categorial("diabetes", c(0, 1))
+check_categorial("diabetes_crea_serum", c(0, 1))
+check_categorial("diabetes_bun_urea", c(0, 1))
+check_categorial("diabetes_urine", c(0, 1))
 check_categorial("gout", c(0, 1))
 
 if (nrow(errors) > 0) {
@@ -903,7 +911,9 @@ categorial_variables = c(
   "sex_male", 
   "race_black", 
   "hypertension", 
-  "diabetes", 
+  "diabetes_crea_serum", 
+  "diabetes_bun_urea", 
+  "diabetes_urine", 
   "gout",
   "ckd",
   "microalbuminuria",
@@ -943,26 +953,18 @@ for (categorial_variable in categorial_variables) {
           names.arg = c("0 / no", "1 / yes", "NA"),
           col = c("gray50", "gray", "gray90"),
           main = categorial_variable, 
-          sub = paste(nrow(output), "records;", zero, "'0',", one, "'1',", nav, "'NA'"))
+          sub = paste(nrow(output), "records;", zero, "'0',", one, "'1',", nav, "'NA'"),
+          cex.sub = 0.9)
 }
 
 # quantitative plots
-if (column_age_urine == "") {
-  # don't make duplicate plot for age_urine (as it is set to age_blood)
-  age_variables_to_plot = c(
-    "age_blood",
-    "age_blood_followup"
-  )
-} else {
-  age_variables_to_plot = c(
-    "age_blood",
-    "age_urine",
-    "age_blood_followup"
-  )
-}
-
 quantitative_variables = c(
-  age_variables_to_plot,
+  "age_urine",
+  "age_crea_serum",
+  "age_bun_urea",
+  "age_uric_acid",
+  "age_gout",
+  "age_blood_followup",
   "albumin_urinary",
   "creatinine_urinary",
   as.character(transformations$variable)
@@ -1000,7 +1002,8 @@ for (variable in quantitative_variables) {
             "q3: ", summ[5],
             ", max: ", summ[6],
             ", na: ", ifelse(is.na(summ[7]), 0, summ[7]),
-            sep = ""
+            sep = "",
+            cex.sub = 0.9
           ))
   
   # density plot of raw variable
@@ -1011,7 +1014,8 @@ for (variable in quantitative_variables) {
                    main = "No transformation", 
                    xlab = variable, 
                    ylab = "Probability", 
-                   sub = paste(non_missing_records, " non-missing records (", missing_records, " NA)", sep = ""))
+                   sub = paste(non_missing_records, " non-missing records (", missing_records, " NA)", sep = ""),
+                   cex.sub = 0.9)
   lines(density(output[, variable], na.rm = TRUE), col="red", lwd=2)
   
   xfit = seq(min(output[, variable], na.rm = TRUE), 
@@ -1057,7 +1061,9 @@ for (variable in quantitative_variables) {
                      main = "Residuals", 
                      xlab = residual_variable, 
                      ylab = "Probability", 
-                     sub = "")
+                     sub = transformations[which(transformations$variable == variable),
+                                           "formula"],
+                     cex.sub = 0.75)
     lines(density(output[, residual_variable], na.rm = TRUE), col="red", lwd=2)
     
     xfit = seq(min(output[, residual_variable], na.rm = TRUE), 
