@@ -21,7 +21,6 @@ source(progression_script_name)
 ### I/O PARAMS
 
 study_name = Sys.getenv("STUDY_NAME")
-family_based_study = Sys.getenv("FAMILY_BASED_STUDY")
 
 input_file = Sys.getenv("INPUT_FILE")
 input_file_delimiter = Sys.getenv("INPUT_FILE_DELIMITER")
@@ -50,7 +49,6 @@ lod_urinary_albumin = Sys.getenv("LOD_URINARY_ALBUMIN")
 
 mandatory_params = c(
   "study_name",
-  "family_based_study",
   "input_file",
   "input_file_delimiter",
   "error_file",
@@ -761,82 +759,48 @@ for (i in 1:nrow(transformations)) {
 }
 
 # make GWAS phenotype output file with less columns
-if (family_based_study == "1") {
-  print("Writing output for family-based study")
-  
-  phenotype = data.frame(
-    index = output$index,
-    individual_id = output$individual_id,
-    ckd_overall = output$ckd,
-    ckd_dm = output$ckd_dm,
-    ckd_nondm = output$ckd_nondm,
-    microalbuminuria_overall = output$microalbuminuria,
-    microalbuminuria_dm = output$microalbuminuria_dm,
-    microalbuminuria_nondm = output$microalbuminuria_nondm,
-    gout_overall = output$gout,
-    gout_female = output$gout_female,
-    gout_male = output$gout_male,
-    screat_overall = output$ln_creatinine_serum_residuals,
-    screat_dm = output$ln_creat_dm_residuals,
-    screat_nondm = output$ln_creat_nondm_residuals,
-    bun_overall = output$ln_bun_serum_residuals,
-    egfr_overall = output$ln_egfr_ckdepi_creat_residuals,
-    egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
-    egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
-    uacr_overall = output$ln_uacr_residuals_invnorm,
-    uacr_dm = output$ln_uacr_dm_residuals_invnorm,
-    uacr_nondm = output$ln_uacr_nondm_residuals_invnorm,
-    uric_acid_overall = output$uric_acid_serum_residuals,
-    uric_acid_female = output$uric_acid_serum_female_residuals,
-    uric_acid_male = output$uric_acid_serum_male_residuals
-  )
+print("Writing output")
 
-  if (have_followup_data) {
-    phenotype$ckdi_overall = output$ckdi
-    phenotype$ckdi_nondm = output$ckdi_nondm
-    phenotype$ckdi_dm = output$ckdi_dm
-    phenotype$ckdi25_overall = output$ckdi25
-    phenotype$ckdi25_nondm = output$ckdi25_nondm
-    phenotype$ckdi25_dm = output$ckdi25_dm
-    phenotype$rapid3_overall = output$rapid3
-    phenotype$rapid3_nondm = output$rapid3_nondm
-    phenotype$rapid3_dm = output$rapid3_dm
-    phenotype$egfr_decline_overall = output$egfr_decline_residuals
-    phenotype$egfr_decline_nondm = output$egfr_decline_nondm_residuals
-    phenotype$egfr_decline_dm = output$egfr_decline_dm_residuals
-  }
-} else {
-  print("Writing output for regular (non-family-based) study")
-  phenotype = data.frame(
-    index = output$index,
-    individual_id = output$individual_id,
-    ckd_dm = output$ckd_dm,
-    ckd_nondm = output$ckd_nondm,
-    microalbuminuria_dm = output$microalbuminuria_dm,
-    microalbuminuria_nondm = output$microalbuminuria_nondm,
-    gout_female = output$gout_female,
-    gout_male = output$gout_male,
-    screat_dm = output$ln_creat_dm_residuals,
-    screat_nondm = output$ln_creat_nondm_residuals,
-    bun_overall = output$ln_bun_serum_residuals,
-    egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
-    egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
-    uacr_dm = output$ln_uacr_dm_residuals_invnorm,
-    uacr_nondm = output$ln_uacr_nondm_residuals_invnorm,
-    uric_acid_female = output$uric_acid_serum_female_residuals,
-    uric_acid_male = output$uric_acid_serum_male_residuals
-  )
+phenotype = data.frame(
+  index = output$index,
+  individual_id = output$individual_id,
+  ckd_overall = output$ckd,
+  ckd_dm = output$ckd_dm,
+  ckd_nondm = output$ckd_nondm,
+  microalbuminuria_overall = output$microalbuminuria,
+  microalbuminuria_dm = output$microalbuminuria_dm,
+  microalbuminuria_nondm = output$microalbuminuria_nondm,
+  gout_overall = output$gout,
+  gout_female = output$gout_female,
+  gout_male = output$gout_male,
+  screat_overall = output$ln_creatinine_serum_residuals,
+  screat_dm = output$ln_creat_dm_residuals,
+  screat_nondm = output$ln_creat_nondm_residuals,
+  bun_overall = output$ln_bun_serum_residuals,
+  egfr_overall = output$ln_egfr_ckdepi_creat_residuals,
+  egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
+  egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
+  uacr_overall = output$ln_uacr_residuals_invnorm,
+  uacr_dm = output$ln_uacr_dm_residuals_invnorm,
+  uacr_nondm = output$ln_uacr_nondm_residuals_invnorm,
+  uric_acid_overall = output$uric_acid_serum_residuals,
+  uric_acid_female = output$uric_acid_serum_female_residuals,
+  uric_acid_male = output$uric_acid_serum_male_residuals
+)
 
-  if (have_followup_data) {
-    phenotype$ckdi_nondm = output$ckdi_nondm
-    phenotype$ckdi_dm = output$ckdi_dm
-    phenotype$ckdi25_nondm = output$ckdi25_nondm
-    phenotype$ckdi25_dm = output$ckdi25_dm
-    phenotype$rapid3_nondm = output$rapid3_nondm
-    phenotype$rapid3_dm = output$rapid3_dm
-    phenotype$egfr_decline_nondm = output$egfr_decline_nondm_residuals
-    phenotype$egfr_decline_dm = output$egfr_decline_dm_residuals
-  }
+if (have_followup_data) {
+  phenotype$ckdi_overall = output$ckdi
+  phenotype$ckdi_nondm = output$ckdi_nondm
+  phenotype$ckdi_dm = output$ckdi_dm
+  phenotype$ckdi25_overall = output$ckdi25
+  phenotype$ckdi25_nondm = output$ckdi25_nondm
+  phenotype$ckdi25_dm = output$ckdi25_dm
+  phenotype$rapid3_overall = output$rapid3
+  phenotype$rapid3_nondm = output$rapid3_nondm
+  phenotype$rapid3_dm = output$rapid3_dm
+  phenotype$egfr_decline_overall = output$egfr_decline_residuals
+  phenotype$egfr_decline_nondm = output$egfr_decline_nondm_residuals
+  phenotype$egfr_decline_dm = output$egfr_decline_dm_residuals
 }
 
 write.table(phenotype, phenotype_file, row.names = F, col.names = T, quote = F,

@@ -5,9 +5,6 @@
 # Name of your study
 STUDY_NAME="GCKD"
 
-# If your study is twin-, pedigree- or family-based write 1, 0 otherwise
-FAMILY_BASED_STUDY="0"
-
 # Name (and path) of YOUR phenotype file: replace with your file name.
 INPUT_FILE="phenotype.txt"
 

@@ -58,7 +58,6 @@ COLUMN_AGE_BLOOD_FOLLOWUP="age_fu"
 
 # export parameters (to avoid "set -a" in params file)
 export STUDY_NAME
-export FAMILY_BASED_STUDY
 export INPUT_FILE
 export JAFFE_BLOOD
 export YEAR
