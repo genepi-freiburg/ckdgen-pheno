@@ -683,18 +683,15 @@ add_transform = function (formula, transform, postprocess) {
 transformations = data.frame()
 
 # rank-based inverse normal transformation for: log UACR
-add_transform("uacr ~ age_urine + sex_male + diabetes_urine", "ln", "invnorm")
+add_transform("uacr ~ age_urine + sex_male", "ln", "invnorm")
 add_transform("uacr_nondm ~ age_urine + sex_male", "ln", "invnorm")
 add_transform("uacr_dm ~ age_urine + sex_male", "ln", "invnorm")
 
 # log-transform and calculate residuals for: creatinine, BUN, eGFR
-add_transform("creatinine_serum ~ age_crea_serum + sex_male + diabetes_crea_serum", "ln", "none")
-add_transform("creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
-add_transform("creat_dm ~ age_crea_serum + sex_male", "ln", "none")
-
+add_transform("creatinine_serum ~ age_crea_serum + sex_male", "ln", "none")
 add_transform("bun_serum ~ age_bun_urea + sex_male", "ln", "none")
 
-add_transform("egfr_ckdepi_creat ~ age_crea_serum + sex_male + diabetes_crea_serum", "ln", "none")
+add_transform("egfr_ckdepi_creat ~ age_crea_serum + sex_male", "ln", "none")
 add_transform("egfr_ckdepi_creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
 add_transform("egfr_ckdepi_creat_dm ~ age_crea_serum + sex_male", "ln", "none")
 
@@ -764,6 +761,17 @@ print("Writing output")
 phenotype = data.frame(
   index = output$index,
   individual_id = output$individual_id,
+  egfr_overall = output$ln_egfr_ckdepi_creat_residuals,
+  egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
+  egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
+  screat_overall = output$ln_creatinine_serum_residuals,
+  uacr_overall = output$ln_uacr_residuals_invnorm,
+  uacr_dm = output$ln_uacr_dm_residuals_invnorm,
+  uacr_nondm = output$ln_uacr_nondm_residuals_invnorm,
+  bun_overall = output$ln_bun_serum_residuals,
+  uric_acid_overall = output$uric_acid_serum_residuals,
+  uric_acid_female = output$uric_acid_serum_female_residuals,
+  uric_acid_male = output$uric_acid_serum_male_residuals,
   ckd_overall = output$ckd,
   ckd_dm = output$ckd_dm,
   ckd_nondm = output$ckd_nondm,
@@ -772,20 +780,7 @@ phenotype = data.frame(
   microalbuminuria_nondm = output$microalbuminuria_nondm,
   gout_overall = output$gout,
   gout_female = output$gout_female,
-  gout_male = output$gout_male,
-  screat_overall = output$ln_creatinine_serum_residuals,
-  screat_dm = output$ln_creat_dm_residuals,
-  screat_nondm = output$ln_creat_nondm_residuals,
-  bun_overall = output$ln_bun_serum_residuals,
-  egfr_overall = output$ln_egfr_ckdepi_creat_residuals,
-  egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
-  egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
-  uacr_overall = output$ln_uacr_residuals_invnorm,
-  uacr_dm = output$ln_uacr_dm_residuals_invnorm,
-  uacr_nondm = output$ln_uacr_nondm_residuals_invnorm,
-  uric_acid_overall = output$uric_acid_serum_residuals,
-  uric_acid_female = output$uric_acid_serum_female_residuals,
-  uric_acid_male = output$uric_acid_serum_male_residuals
+  gout_male = output$gout_male
 )
 
 if (have_followup_data) {
