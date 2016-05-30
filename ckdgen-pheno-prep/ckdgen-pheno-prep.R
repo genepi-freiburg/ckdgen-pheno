@@ -149,7 +149,6 @@ column_urea_serum = Sys.getenv("COLUMN_UREA_SERUM")
 column_uric_acid_serum = Sys.getenv("COLUMN_URIC_ACID_SERUM")
 column_hypertension = Sys.getenv("COLUMN_HYPERTENSION")
 column_diabetes_crea_serum = Sys.getenv("COLUMN_DIABETES_CREA_SERUM")
-column_diabetes_bun_urea = Sys.getenv("COLUMN_DIABETES_BUN_UREA")
 column_diabetes_urine = Sys.getenv("COLUMN_DIABETES_URINE")
 column_gout = Sys.getenv("COLUMN_GOUT")
 column_creatinine_serum_followup = Sys.getenv("COLUMN_CREATININE_SERUM_FOLLOWUP")
@@ -176,7 +175,6 @@ optional_columns = c(
   "column_urea_serum",
   "column_creatinine_serum_followup",
   "column_diabetes_crea_serum",
-  "column_diabetes_bun_urea",
   "column_diabetes_urine",
   "column_gout"
 )
@@ -314,12 +312,10 @@ check_missing_diabetes = function(name, have_pheno, have_diabetes) {
 }
 
 have_diabetes_crea = length(which(!is.na(data[, column_diabetes_crea_serum])))
-have_diabetes_bun_urea = length(which(!is.na(data[, column_diabetes_bun_urea])))
 have_diabetes_urine = length(which(!is.na(data[, column_diabetes_urine])))
 
 check_missing_diabetes("urinary creatinine/albumin", have_pheno_urine, have_diabetes_urine)
 check_missing_diabetes("serum creatinine", have_pheno_crea, have_diabetes_crea)
-check_missing_diabetes("BUN/urea", have_pheno_bun_urea, have_diabetes_bun_urea)
 
 
 ### CHECK URINARY CREATININE / ALBUMIN
@@ -598,9 +594,6 @@ output$egfr_ckdepi_creat_dm = ifelse(output$diabetes_crea_serum == "1", output$e
 output$ckd_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$ckd)
 output$ckd_dm = ifelse(output$diabetes_crea_serum == "1", output$ckd, NA)
 
-output$bun_serum_nondm = ifelse(output$diabetes_bun_urea == "1", NA, output$bun_serum)
-output$bun_serum_dm = ifelse(output$diabetes_bun_urea == "1", output$bun_serum, NA)
-
 output$uacr_nondm = ifelse(output$diabetes_urine == "1", NA, output$uacr)
 output$uacr_dm = ifelse(output$diabetes_urine == "1", output$uacr, NA)
 
@@ -636,8 +629,6 @@ stratum_columns = c(
   "egfr_ckdepi_creat_dm",
   "ckd_nondm",
   "ckd_dm",
-  "bun_serum_nondm",
-  "bun_serum_dm",
   "uacr_nondm",
   "uacr_dm",
   "microalbuminuria_nondm",
@@ -703,9 +694,7 @@ add_transform("creatinine_serum ~ age_crea_serum + sex_male + diabetes_crea_seru
 add_transform("creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
 add_transform("creat_dm ~ age_crea_serum + sex_male", "ln", "none")
 
-add_transform("bun_serum ~ age_bun_urea + sex_male + diabetes_bun_urea", "ln", "none")
-add_transform("bun_serum_nondm ~ age_bun_urea + sex_male", "ln", "none")
-add_transform("bun_serum_dm ~ age_bun_urea + sex_male", "ln", "none")
+add_transform("bun_serum ~ age_bun_urea + sex_male", "ln", "none")
 
 add_transform("egfr_ckdepi_creat ~ age_crea_serum + sex_male + diabetes_crea_serum", "ln", "none")
 add_transform("egfr_ckdepi_creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
@@ -791,8 +780,6 @@ if (family_based_study == "1") {
     screat_dm = output$ln_creat_dm_residuals,
     screat_nondm = output$ln_creat_nondm_residuals,
     bun_overall = output$ln_bun_serum_residuals,
-    bun_dm = output$ln_bun_serum_dm_residuals,
-    bun_nondm = output$ln_bun_serum_nondm_residuals,
     egfr_overall = output$ln_egfr_ckdepi_creat_residuals,
     egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
     egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
@@ -831,8 +818,7 @@ if (family_based_study == "1") {
     gout_male = output$gout_male,
     screat_dm = output$ln_creat_dm_residuals,
     screat_nondm = output$ln_creat_nondm_residuals,
-    bun_dm = output$ln_bun_serum_dm_residuals,
-    bun_nondm = output$ln_bun_serum_nondm_residuals,
+    bun_overall = output$ln_bun_serum_residuals,
     egfr_dm = output$ln_egfr_ckdepi_creat_dm_residuals,
     egfr_nondm = output$ln_egfr_ckdepi_creat_nondm_residuals,
     uacr_dm = output$ln_uacr_dm_residuals_invnorm,
@@ -888,7 +874,6 @@ check_categorial("sex_male", c(0, 1))
 check_categorial("race_black", c(0, 1))
 check_categorial("hypertension", c(0, 1))
 check_categorial("diabetes_crea_serum", c(0, 1))
-check_categorial("diabetes_bun_urea", c(0, 1))
 check_categorial("diabetes_urine", c(0, 1))
 check_categorial("gout", c(0, 1))
 
@@ -912,7 +897,6 @@ categorial_variables = c(
   "race_black", 
   "hypertension", 
   "diabetes_crea_serum", 
-  "diabetes_bun_urea", 
   "diabetes_urine", 
   "gout",
   "ckd",

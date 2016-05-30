@@ -50,7 +50,6 @@ COLUMN_URIC_ACID_SERUM="uric_acid"
 
 COLUMN_HYPERTENSION="htn"
 COLUMN_DIABETES_CREA_SERUM="diabetes_screa"
-COLUMN_DIABETES_BUN_UREA="diabetes_bun_urea"
 COLUMN_DIABETES_URINE="diabetes_urine"
 COLUMN_GOUT="gout"
 
