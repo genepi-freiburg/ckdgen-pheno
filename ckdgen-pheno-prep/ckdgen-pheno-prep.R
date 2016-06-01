@@ -1,5 +1,7 @@
 ### SOURCE FUNCTIONS FILE
 
+print("CKDgen phenotype generation R script started")
+
 initial_options = commandArgs(trailingOnly = FALSE)
 file_arg_name = "--file="
 script_name = sub(file_arg_name, "", initial_options[grep(file_arg_name, 
