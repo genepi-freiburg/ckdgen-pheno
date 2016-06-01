@@ -103,7 +103,7 @@ print(paste("Reading input file:", input_file))
 
 if (input_file_delimiter == "AUTO") {
   data = try(read.table(input_file, header = TRUE, 
-                        na.strings = c("NA", ".", "-9", "-99", "-999")))
+                        na.strings = c("NA", ".", "-9", "-99", "-999", "#N/A")))
 } else {
   if (input_file_delimiter == "TAB") {
     separator = "\t"
