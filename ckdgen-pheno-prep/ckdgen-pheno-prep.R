@@ -125,7 +125,7 @@ if (class(data) == "try-error") {
 }
 
 print(paste("Got", nrow(data), "rows and", ncol(data), "columns"))
-if (nrow(data) < 100 || ncol(data) < 10) {
+if (nrow(data) < 100 || ncol(data) < 4) {
   stop("Error reading input file - data seems incomplete. Please check the logs.")
 }
 
