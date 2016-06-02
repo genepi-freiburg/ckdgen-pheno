@@ -129,6 +129,9 @@ if (nrow(data) < 100 || ncol(data) < 4) {
   stop("Error reading input file - data seems incomplete. Please check the logs.")
 }
 
+print("First summary of input data")
+print(summary(data))
+
 
 ### Column names
 
