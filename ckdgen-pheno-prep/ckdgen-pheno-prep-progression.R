@@ -1,12 +1,11 @@
 ###
 ###		source("ckdgen-pheno-prep-progression.R")
 ###
-### 	author: Mathias Gorski
+###		author: Mathias Gorski
 ###		mathias.gorski@ukr.de
-###		date: April 15th 2016
+###		date: June 2nd 2016
 ###
 ###		FUNCTIONS
-###		calc_CKDi: returns a vector of length N. Calculates the binary variable CKDi 1 = cases; 0 = controls 
 ###		calc_CKDi25: returns a vector of length N. Calculates the binary variable CKDi25 1 = cases; 0 = controls 
 ###		calc_eGFRdecline: returns a vector of length N. Calculates the continuous variable eGFRdecline as decline per annum 
 ###		calc_rapid3: returns a vector of length N. Calculates the binary variable rapid3; 1 = cases; 0 = controls 
@@ -19,7 +18,7 @@
 ###		NOTE: all three input vectors must of same length
 ###
 ###		OUTPUT 
-###		Vectors CKDi, CKDI25, eGFRdecline and rapid3 are of length N 
+###		Vectors CKDI25, eGFRdecline and rapid3 are of length N 
 ###
 ###		EXAMPLE
 ###		tblPhenotypes=read.table(phenotypes.txt)  
@@ -31,7 +30,6 @@
 ###		timeDiff=age_followup-age_baseline
 ###		
 ###		check.decline.variables(eGFRcrea_CKDEPI_baseline,eGFRcrea_CKDEPI_followup,timeDiff)
-###		CKDi=calc_CKDi(eGFRcrea_CKDEPI_baseline,eGFRcrea_CKDEPI_followup)
 ###		CKDi25=calc_CKDi25(eGFRcrea_CKDEPI_baseline,eGFRcrea_CKDEPI_followup)
 ###		eGFRdecline=calc_eGFRdecline(eGFRcrea_CKDEPI_baseline,eGFRcrea_CKDEPI_followup,timeDiff)
 ###		rapid3=calc_rapid3(eGFRcrea_CKDEPI_baseline,eGFRcrea_CKDEPI_followup,timeDiff)
@@ -49,27 +47,18 @@ check.decline.variables=function(a_eGFRcrea_baseline, a_eGFRcrea_followup, a_tim
 		stop(paste(date(),"Exit in check.decline.variables: input variables eGFRcrea_baseline, eGFRcrea_followup and time_between_baseline_and_followup_in_years must have same length!"))
 }
 
-# calculate dichtomous CKDi; 1 = cases; 0 = controls
-calc_CKDi = function(a_eGFRcrea_baseline, a_eGFRcrea_followup) {
-
-	CKDi=rep(NA,length(a_eGFRcrea_baseline))
-	CKDi[which(a_eGFRcrea_baseline>=60 & a_eGFRcrea_followup <60)]=1
-	CKDi[which(a_eGFRcrea_baseline>=60 & a_eGFRcrea_followup >=60)]=0
-	CKDi
-}
-	
 # calculate dichotomous CKDi25: 1=cases; 0=controls
 calc_CKDi25 = function(a_eGFRcrea_baseline, a_eGFRcrea_followup) {
 
 	CKDi25=rep(NA,length(a_eGFRcrea_baseline))
-	CKDi25[which(a_eGFRcrea_baseline>=60 & a_eGFRcrea_followup <= (0.75*a_eGFRcrea_baseline))]=1
-	CKDi25[which(a_eGFRcrea_baseline>=60 & a_eGFRcrea_followup >=60)]=0
+	CKDi25[which(a_eGFRcrea_baseline >= 60 & a_eGFRcrea_followup <= (0.75*a_eGFRcrea_baseline))] = 1
+	CKDi25[which(a_eGFRcrea_baseline >= 60 & a_eGFRcrea_followup >=60)] = 0
 	CKDi25
 }
 
 # calculate continuous eGFRdecline
-# eGFRdecline < 0 value means an increasing filtration rate over time.
-# eGFRdecline > 0 of decline means a loss of filtration over time and 	
+# eGFRdecline < 0 value means an increasing filtration rate per year.
+# eGFRdecline > 0 of decline means a loss of filtration per year
 calc_eGFRdecline = function(a_eGFRcrea_baseline, a_eGFRcrea_followup, a_time_between_baseline_and_followup_in_years) {
 
 	eGFRdecline=(a_eGFRcrea_baseline-a_eGFRcrea_followup)/(a_time_between_baseline_and_followup_in_years)
@@ -78,13 +67,13 @@ calc_eGFRdecline = function(a_eGFRcrea_baseline, a_eGFRcrea_followup, a_time_bet
 
 # calculate dichotomous rapid3: 1=cases; 0=controls
 # rapid3==1 means more than 3 unit decline between baseline and follow up (decline of filtration rate)
-# rapid3==0 means less or equal to a 3 unit decline between baseline and follow up (small decline or increase of filtration rate)
+# rapid3==0 means the decline between baseline and follow lies between -1 and 1 (small decline or small increase of filtration rate)
 calc_rapid3 = function(a_eGFRcrea_baseline, a_eGFRcrea_followup, a_time_between_baseline_and_followup_in_years) {
 
 	eGFRdecline=(a_eGFRcrea_baseline-a_eGFRcrea_followup)/(a_time_between_baseline_and_followup_in_years)
 	rapid3=rep(NA,length(a_eGFRcrea_baseline))
-	rapid3[which(eGFRdecline >3)]=1
-	rapid3[which(eGFRdecline <=3)]=0
+	rapid3[which(eGFRdecline >= 3)] = 1
+	rapid3[which(eGFRdecline > -1 & tblMerged$decline_pa < 1)] = 0
 	rapid3
 }
 # eof
