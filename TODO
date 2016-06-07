@@ -1,10 +1,3 @@
 TODO
 
-- longitudinal traits:
-   * CKDi25 without adjustment for follow up time, 
-   * Rapid3_overall,  ("CKDgen definition")
-   * rapid3_DM,   ("CKDgen definition")
-   * rapid3_noDM,   ("CKDgen definition")
-   * eGFRdecline_overall, 
-   * eGFRdecline_DM,
-   * eGFRdecline_noDM
+- testing & bugfixing
