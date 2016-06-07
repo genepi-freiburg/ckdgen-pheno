@@ -301,7 +301,7 @@ check_missing_age("followup serum creatinine", have_pheno_followup, have_age_fol
 
 check_missing_diabetes = function(name, have_pheno, have_diabetes) {
   if (have_pheno && !have_diabetes) {
-    print(paste("ERROR: Age column missing, but phenotype present:", name))
+    print(paste("ERROR: Diabetes column missing, but phenotype present:", name))
     error = data.frame(severity = "ERROR", 
                        line_number = NA, 
                        message = "Diabetes column missing, but phenotype present",
