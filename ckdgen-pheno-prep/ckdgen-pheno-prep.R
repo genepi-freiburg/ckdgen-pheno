@@ -610,12 +610,10 @@ output$gout_female = ifelse(output$sex_male == "1", NA, output$gout)
 
 # stratify followup data
 if (have_followup_data) {
-  output$ckdi25_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$ckdi25)
-  output$ckdi25_dm = ifelse(output$diabetes_crea_serum == "1", output$ckdi25, NA)
-
   output$egfr_decline_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$egfr_decline)
   output$egfr_decline_dm = ifelse(output$diabetes_crea_serum == "1", output$egfr_decline, NA)
-
+  output$egfr_decline_ckd = ifelse(output$ckd == "1", output$egfr_decline, NA)
+  
   output$rapid3_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$rapid3)
   output$rapid3_dm = ifelse(output$diabetes_crea_serum == "1", output$rapid3, NA)
 }
@@ -641,10 +639,9 @@ stratum_columns = c(
 if (have_followup_data) {
   stratum_columns = c(
     stratum_columns,
-    "ckdi25_nondm",
-    "ckdi25_dm",
     "egfr_decline_nondm",
     "egfr_decline_dm",
+    "egfr_decline_ckd",
     "rapid3_nondm",
     "rapid3_dm"
   )
@@ -698,6 +695,7 @@ if (have_followup_data) {
   add_transform("egfr_decline ~ age_crea_serum + sex_male + diabetes_crea_serum", "none", "none")
   add_transform("egfr_decline_nondm ~ age_crea_serum + sex_male", "none", "none")
   add_transform("egfr_decline_dm ~ age_crea_serum + sex_male", "none", "none")
+  add_transform("egfr_decline_ckd ~ age_crea_serum + sex_male", "none", "none")
 }
 
 # no transformation for: uric_acid
@@ -784,14 +782,13 @@ phenotype = data.frame(
 
 if (have_followup_data) {
   phenotype$ckdi25_overall = output$ckdi25
-  phenotype$ckdi25_nondm = output$ckdi25_nondm
-  phenotype$ckdi25_dm = output$ckdi25_dm
   phenotype$rapid3_overall = output$rapid3
   phenotype$rapid3_nondm = output$rapid3_nondm
   phenotype$rapid3_dm = output$rapid3_dm
   phenotype$egfr_decline_overall = output$egfr_decline_residuals
   phenotype$egfr_decline_nondm = output$egfr_decline_nondm_residuals
   phenotype$egfr_decline_dm = output$egfr_decline_dm_residuals
+  phenotype$egfr_decline_ckd = output$egfr_decline_ckd_residuals
 }
 
 write.table(phenotype, phenotype_file, row.names = F, col.names = T, quote = F,
@@ -868,8 +865,6 @@ if (have_followup_data) {
   categorial_variables = c(
     categorial_variables,
     "ckdi25",
-    "ckdi25_nondm",
-    "ckdi25_dm",
     "rapid3",
     "rapid3_nondm",
     "rapid3_dm"
