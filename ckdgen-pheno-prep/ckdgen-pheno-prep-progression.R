@@ -73,7 +73,7 @@ calc_rapid3 = function(a_eGFRcrea_baseline, a_eGFRcrea_followup, a_time_between_
 	eGFRdecline=(a_eGFRcrea_baseline-a_eGFRcrea_followup)/(a_time_between_baseline_and_followup_in_years)
 	rapid3=rep(NA,length(a_eGFRcrea_baseline))
 	rapid3[which(eGFRdecline >= 3)] = 1
-	rapid3[which(eGFRdecline > -1 & tblMerged$decline_pa < 1)] = 0
+	rapid3[which(eGFRdecline > -1 & eGFRdecline < 1)] = 0
 	rapid3
 }
 # eof

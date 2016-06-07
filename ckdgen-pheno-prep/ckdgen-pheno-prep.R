@@ -581,7 +581,6 @@ if (have_followup_data) {
   print("calculate longitudinal phenotypes")
   time_diff = output$age_blood_followup - output$age_crea_serum
   check.decline.variables(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
-  output$ckdi = calc_CKDi(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
   output$ckdi25 = calc_CKDi25(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
   output$egfr_decline = calc_eGFRdecline(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
   output$rapid3 = calc_rapid3(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
@@ -611,9 +610,6 @@ output$gout_female = ifelse(output$sex_male == "1", NA, output$gout)
 
 # stratify followup data
 if (have_followup_data) {
-  output$ckdi_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$ckdi)
-  output$ckdi_dm = ifelse(output$diabetes_crea_serum == "1", output$ckdi, NA)
-
   output$ckdi25_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$ckdi25)
   output$ckdi25_dm = ifelse(output$diabetes_crea_serum == "1", output$ckdi25, NA)
 
@@ -645,8 +641,6 @@ stratum_columns = c(
 if (have_followup_data) {
   stratum_columns = c(
     stratum_columns,
-    "ckdi_nondm",
-    "ckdi_dm",
     "ckdi25_nondm",
     "ckdi25_dm",
     "egfr_decline_nondm",
@@ -789,9 +783,6 @@ phenotype = data.frame(
 )
 
 if (have_followup_data) {
-  phenotype$ckdi_overall = output$ckdi
-  phenotype$ckdi_nondm = output$ckdi_nondm
-  phenotype$ckdi_dm = output$ckdi_dm
   phenotype$ckdi25_overall = output$ckdi25
   phenotype$ckdi25_nondm = output$ckdi25_nondm
   phenotype$ckdi25_dm = output$ckdi25_dm
@@ -876,9 +867,6 @@ categorial_variables = c(
 if (have_followup_data) {
   categorial_variables = c(
     categorial_variables,
-    "ckdi",
-    "ckdi_nondm",
-    "ckdi_dm",
     "ckdi25",
     "ckdi25_nondm",
     "ckdi25_dm",
