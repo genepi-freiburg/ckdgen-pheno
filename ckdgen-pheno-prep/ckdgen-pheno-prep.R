@@ -552,6 +552,56 @@ if (have_followup_data) {
   output$egfr_ckdepi_followup = NA
 }
 
+# windsorize baseline eGFR
+egfr_low = length(which(output$egfr_ckdepi_creat < 15))
+egfr_high = length(which(output$egfr_ckdepi_creat > 200))
+print(paste("Windsorize", egfr_low, "eGFR values below 15 ml/min/1.73qm"))
+print(paste("Windsorize", egfr_high, "eGFR values above 200 ml/min/1.73qm"))
+
+output$egfr_ckdepi_creat = ifelse(output$egfr_ckdepi_creat < 15, 15, output$egfr_ckdepi_creat)
+output$egfr_ckdepi_creat = ifelse(output$egfr_ckdepi_creat > 200, 200, output$egfr_ckdepi_creat)
+
+# windsorize follow-up eGFR
+egfr_fu_low = length(which(output$egfr_ckdepi_followup < 15))
+egfr_fu_high = length(which(output$egfr_ckdepi_followup > 200))
+print(paste("Windsorize", egfr_fu_low, "eGFR follow-up values below 15 ml/min/1.73qm"))
+print(paste("Windsorize", egfr_fu_high, "eGFR follow-up values above 200 ml/min/1.73qm"))
+
+output$egfr_ckdepi_followup = ifelse(output$egfr_ckdepi_followup < 15, 15, output$egfr_ckdepi_followup)
+output$egfr_ckdepi_followup = ifelse(output$egfr_ckdepi_followup > 200, 200, output$egfr_ckdepi_followup)
+
+# windsorize baseline creatinine
+crea_nonblack_low = length(which(output$creatinine_serum < 0.03 & output$race_black == 0))
+crea_nonblack_high = length(which(output$creatinine_serum > 5.18 & output$race_black == 0))
+crea_black_low = length(which(output$creatinine_serum < 0.045 & output$race_black == 1))
+crea_black_high = length(which(output$creatinine_serum > 5.85 & output$race_black == 1))
+
+print(paste("Windsorize", crea_nonblack_low, "serum creatinine values (non-black) below 0.03 mg/dl"))
+print(paste("Windsorize", crea_nonblack_high, "serum creatinine values (non-black) above 5.18 mg/dl"))
+print(paste("Windsorize", crea_black_low, "serum creatinine values (black) below 0.045 mg/dl"))
+print(paste("Windsorize", crea_black_high, "serum creatinine values (black) above 5.85 mg/dl"))
+
+output$creatinine_serum = ifelse(output$creatinine_serum < 0.03 & output$race_black == 0, 0.03, output$creatinine_serum)
+output$creatinine_serum = ifelse(output$creatinine_serum > 5.18 & output$race_black == 0, 5.18, output$creatinine_serum)
+output$creatinine_serum = ifelse(output$creatinine_serum < 0.045 & output$race_black == 1, 0.045, output$creatinine_serum)
+output$creatinine_serum = ifelse(output$creatinine_serum > 5.85 & output$race_black == 1, 5.85, output$creatinine_serum)
+
+# windsorize follow-up creatinine
+crea_fu_nonblack_low = length(which(output$creatinine_serum_followup < 0.03 & output$race_black == 0))
+crea_fu_nonblack_high = length(which(output$creatinine_serum_followup > 5.18 & output$race_black == 0))
+crea_fu_black_low = length(which(output$creatinine_serum_followup < 0.045 & output$race_black == 1))
+crea_fu_black_high = length(which(output$creatinine_serum_followup > 5.85 & output$race_black == 1))
+
+print(paste("Windsorize", crea_fu_nonblack_low, "follow-up creatinine values (non-black) below 0.03 mg/dl"))
+print(paste("Windsorize", crea_fu_nonblack_high, "follow-up creatinine values (non-black) above 5.18 mg/dl"))
+print(paste("Windsorize", crea_fu_black_low, "follow-up creatinine values (black) below 0.045 mg/dl"))
+print(paste("Windsorize", crea_fu_black_high, "follow-up creatinine values (black) above 5.85 mg/dl"))
+
+output$creatinine_serum_followup = ifelse(output$creatinine_serum_followup < 0.03 & output$race_black == 0, 0.03, output$creatinine_serum_followup)
+output$creatinine_serum_followup = ifelse(output$creatinine_serum_followup > 5.18 & output$race_black == 0, 5.18, output$creatinine_serum_followup)
+output$creatinine_serum_followup = ifelse(output$creatinine_serum_followup < 0.045 & output$race_black == 1, 0.045, output$creatinine_serum_followup)
+output$creatinine_serum_followup = ifelse(output$creatinine_serum_followup > 5.85 & output$race_black == 1, 5.85, output$creatinine_serum_followup)
+
 # calculate BUN
 bun_non_missing_count = length(which(!is.na(output$bun_serum)))
 if (bun_non_missing_count == 0) {
