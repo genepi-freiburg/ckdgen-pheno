@@ -933,9 +933,9 @@ for (variable in quantitative_variables) {
             "q3: ", summ[5],
             ", max: ", summ[6],
             ", na: ", ifelse(is.na(summ[7]), 0, summ[7]),
-            sep = "",
+            sep = ""),
             cex.sub = 0.9
-          ))
+          )
   
   # density plot of raw variable
   histogram = hist(output[, variable], 
