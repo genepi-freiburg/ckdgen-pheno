@@ -38,14 +38,13 @@ errors = data.frame()
 ### FURTHER PARAMS
 
 jaffe_blood = Sys.getenv("JAFFE_BLOOD")
-year = Sys.getenv("YEAR")
+year = as.numeric(Sys.getenv("YEAR"))
 jaffe_blood_followup = Sys.getenv("JAFFE_BLOOD_FOLLOWUP")
-year_followup = Sys.getenv("YEAR_FOLLOWUP")
+year_followup = as.numeric(Sys.getenv("YEAR_FOLLOWUP"))
 creatinine_serum_unit = Sys.getenv("CREATININE_SERUM_UNIT")
 creatinine_urinary_unit = Sys.getenv("CREATININE_URINARY_UNIT")
 urate_unit = Sys.getenv("URATE_UNIT")
 lod_urinary_albumin = Sys.getenv("LOD_URINARY_ALBUMIN")
-
 
 ### CHECK PARAMS
 
@@ -67,6 +66,7 @@ for (mandatory_param in mandatory_params) {
 }
 
 if (nchar(as.character(lod_urinary_albumin)) > 0) {
+  lod_urinary_albumin = as.numeric(lod_urinary_albumin)
   if (lod_urinary_albumin < 0.1 || lod_urinary_albumin > 20) {
     stop(paste("Limit of detection for urinary albumin out of bounds: ", 
                lod_urinary_albumin, sep = ""))
