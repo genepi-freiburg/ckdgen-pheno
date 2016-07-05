@@ -124,5 +124,5 @@ touch ${SUMMARY_OUTPUT_FILE_PDF}
 
 # invoke R script
 echo "Invoking CKDgen pheno prep R script" | tee -a ${LOG_FILE}
-Rscript ckdgen-pheno-prep.R 2>&1 | tee -a ${LOG_FILE}
+Rscript ${SCRIPT_DIR}/ckdgen-pheno-prep.R 2>&1 | tee -a ${LOG_FILE}
 
