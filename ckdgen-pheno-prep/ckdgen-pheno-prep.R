@@ -868,7 +868,7 @@ check_median_by_range("albumin_urinary", 0, 200)
 check_median_by_range("creatinine_urinary", 0, 200)
 check_median_by_range("uric_acid_serum", 2, 20)
 check_median_by_range("uacr", 0, 200)
-check_median_by_range("bun_serum", 10, 100)
+check_median_by_range("bun_serum", 5, 20)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 check_median_by_range("creatinine_serum_followup", 0.5, 2.5)
 
