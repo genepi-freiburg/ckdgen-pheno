@@ -412,7 +412,24 @@ column2variable = function (column_name) {
   substr(column_name, 8, 1000)
 }
 
-summary_statistics = data.frame()
+summary_statistics = data.frame(
+  variable = "",
+  min = 0,
+  q1 = 0,
+  med = 0,
+  q3 = 0,
+  max = 0,
+  n = 0,
+  na = 0,
+  mean = 0,
+  sd = 0,
+  kurtosis = 0,
+  skewness = 0
+)
+
+summary_statistics$variable = as.character(summary_statistics$variable)
+
+i = 0
 for (column in all_columns) {
   column_name = get(column)
   if (column_name == "") {
@@ -425,15 +442,23 @@ for (column in all_columns) {
     next
   }
   
+  # variable row counter
+  i = i + 1
+  summary_statistics[i, "variable"] = column2variable(column)
+  
   if (length(which(!is.na(data[,column_name]))) == 0) {
     # column is completely NA
-    summary_statistics = rbind(summary_statistics, data.frame(
-      variable = column2variable(column),
-      min = NA, q1 = NA, med = NA, q3 = NA, max = NA,
-      n = 0, na = nrow(data),
-      mean = NA, sd = NA,
-      kurtosis = NA, skewness = NA
-    ))
+    summary_statistics[i, "min"] = NA
+    summary_statistics[i, "q1"] = NA
+    summary_statistics[i, "med"] = NA
+    summary_statistics[i, "q3"] = NA
+    summary_statistics[i, "max"] = NA
+    summary_statistics[i, "n"] = 0
+    summary_statistics[i, "na"] = nrow(data)
+    summary_statistics[i, "mean"] = NA
+    summary_statistics[i, "sd"] = NA
+    summary_statistics[i, "kurtosis"] = NA
+    summary_statistics[i, "skewness"] = NA
     next
   }
   
@@ -441,22 +466,30 @@ for (column in all_columns) {
   summ = summary(data[, column_name])
   print(summ)
   
-  summary_statistics = rbind(summary_statistics, data.frame(
-    variable = column2variable(column),
-    min = summ[1],
-    q1 = summ[2],
-    med = summ[3],
-    q3 = summ[5],
-    max = summ[6],
-    n = length(which(!is.na(data[,column_name]))),
-    na = ifelse(is.na(summ[7]), 0, summ[7]),
-    mean = summ[4],
-    sd = sd(data[,column_name], na.rm = T),
-    kurtosis = kurtosis(data[,column_name], na.rm = T),
-    skewness = skewness(data[,column_name], na.rm = T)                
-  ))
+  my_na = 0
+  if (length(summ) > 6) {
+    my_na = summ[7]
+  }
+
+  summary_statistics[i, "min"] = summ[1]
+  summary_statistics[i, "q1"] = summ[2]
+  summary_statistics[i, "med"] = summ[3]
+  summary_statistics[i, "q3"] = summ[5]
+  summary_statistics[i, "max"] = summ[6]
+  summary_statistics[i, "n"] = length(which(!is.na(data[,column_name])))
+  summary_statistics[i, "na"] = my_na
+  summary_statistics[i, "mean"] = summ[4]
+  summary_statistics[i, "sd"] = sd(data[,column_name], na.rm = T)
+  summary_statistics[i, "kurtosis"] = kurtosis(data[,column_name], na.rm = T)
+  summary_statistics[i, "skewness"] = skewness(data[,column_name], na.rm = T)
 }
+
 row.names(summary_statistics) <- seq(nrow(summary_statistics))
+
+warnings()
+summary_statistics$variable = as.factor(summary_statistics$variable)
+print(summary(summary_statistics))
+
 write.table(summary_statistics, summary_output_file_txt, row.names = FALSE, 
             col.names = TRUE, quote = TRUE, sep = ",")
 
