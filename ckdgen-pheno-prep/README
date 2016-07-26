@@ -15,5 +15,9 @@ Usage instructions
    If you need assistance, please do not hesitate to contact us.
 
 
-The script has been tested both on Linux and Windows systems.
+The script has been tested both on Linux and Windows systems with
+different R versions (3.0.x, 3.2.x and 3.3.0/3.3.1).
+If something does not work for you, please do not hesitate to contact me.
+Please state the R version you are using.
+
 For Windows, please use Cygwin and ensure "Rscript" is in your PATH.
