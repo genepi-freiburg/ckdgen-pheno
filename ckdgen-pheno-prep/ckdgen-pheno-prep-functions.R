@@ -196,3 +196,10 @@ CKDEpi.creat <- function(creatinine, sex, age, ethnicity)
   } else
     stop ("Some variables are not defined") 
 }
+
+# Schwartz exponential eGFR equation (Schwartz 2012)
+
+eGFR_Schwartz_exp <- function(crea_mg_dl, height_m) 
+{
+  return(42.3 * (height_m / crea_mg_dl) ^ 0.780)
+}

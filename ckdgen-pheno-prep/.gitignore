@@ -2,5 +2,6 @@ tests
 out-GCKD
 *-win*
 phenotype.txt
+phenotype-pediatric.txt
 testinput.txt
 .RData

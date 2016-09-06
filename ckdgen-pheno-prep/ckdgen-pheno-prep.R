@@ -45,6 +45,7 @@ creatinine_serum_unit = Sys.getenv("CREATININE_SERUM_UNIT")
 creatinine_urinary_unit = Sys.getenv("CREATININE_URINARY_UNIT")
 urate_unit = Sys.getenv("URATE_UNIT")
 lod_urinary_albumin = Sys.getenv("LOD_URINARY_ALBUMIN")
+pediatric_mode = Sys.getenv("PEDIATRIC_MODE")
 
 ### CHECK PARAMS
 
@@ -89,11 +90,23 @@ all_params = c(
   "creatinine_serum_unit",
   "creatinine_urinary_unit",
   "urate_unit",
-  "lod_urinary_albumin"
+  "lod_urinary_albumin",
+  "pediatric_mode"
 )
 
 for (param in all_params) {
   print(paste("Param '", param, "': Value = '", get(param), "'", sep = ""))
+}
+
+
+### PEDIATRIC MODE
+
+if (pediatric_mode == "1") {
+  pediatric_mode = TRUE
+  print("Pediatric mode.")
+} else {
+  pediatric_mode = FALSE
+  print("Adult mode.")
 }
 
 
@@ -142,6 +155,7 @@ column_age_uric_acid = Sys.getenv("COLUMN_AGE_URIC_ACID")
 column_age_gout = Sys.getenv("COLUMN_AGE_GOUT")
 column_age_urine = Sys.getenv("COLUMN_AGE_URINE")
 column_age_blood_followup = Sys.getenv("COLUMN_AGE_BLOOD_FOLLOWUP")
+column_height_crea_serum = Sys.getenv("COLUMN_HEIGHT_CREA_SERUM")
 column_sex_male = Sys.getenv("COLUMN_SEX_MALE")
 column_race_black = Sys.getenv("COLUMN_RACE_BLACK")
 column_creatinine_serum = Sys.getenv("COLUMN_CREATININE_SERUM")
@@ -155,7 +169,7 @@ column_diabetes_crea_serum = Sys.getenv("COLUMN_DIABETES_CREA_SERUM")
 column_diabetes_urine = Sys.getenv("COLUMN_DIABETES_URINE")
 column_gout = Sys.getenv("COLUMN_GOUT")
 column_creatinine_serum_followup = Sys.getenv("COLUMN_CREATININE_SERUM_FOLLOWUP")
-
+  
 mandatory_columns = c(
   "column_individual_id",
   "column_sex_male",
@@ -181,6 +195,11 @@ optional_columns = c(
   "column_diabetes_urine",
   "column_gout"
 )
+
+if (pediatric_mode) {
+  # don't even mention for adults
+  optional_columns = c(optional_columns, "column_height_crea_serum")
+}
 
 all_columns = c(mandatory_columns, optional_columns)
 
@@ -295,6 +314,27 @@ check_missing_age("BUN/urea", have_pheno_bun_urea, have_age_bun_urea)
 check_missing_age("uric acid", have_pheno_uric_acid, have_age_uric_acid)
 check_missing_age("gout", have_pheno_gout, have_age_gout)
 check_missing_age("followup serum creatinine", have_pheno_followup, have_age_followup)
+
+
+### CHECK HEIGHT MISSINGNESS
+
+if (pediatric_mode) {
+  have_pheno_height = length(which(!is.na(data[, column_height_crea_serum]))) > 0
+  if (!have_pheno_height && have_pheno_crea) {
+    print("ERROR: Height column missing, but creatinine present")
+    error = data.frame(severity = "ERROR", line_number = NA, 
+                       message = "Height column missing, but phenotype present",
+                       param1 = "screa", param2 = "")
+    errors <<- rbind(errors, error)  
+  }
+  if (have_pheno_height && !have_pheno_crea) {
+    print("ERROR: Height column present, but creatinine missing")
+    error = data.frame(severity = "ERROR", line_number = NA, 
+                       message = "Height column present, but phenotype missing",
+                       param1 = "screa", param2 = "")
+    errors <<- rbind(errors, error)  
+  }
+}
 
 
 ### CHECK DIABETES MISSINGNESS
@@ -575,6 +615,13 @@ print("Calculating eGFR creat (CKDEpi)")
 output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, 
                                         output$age_crea_serum, output$race_black)
 
+# calculate pediatric eGFR
+if (pediatric_mode) {
+  print("Calculating pediatric eGFR creat (Schwartz)")
+  output$egfr_pediatric_creat = eGFR_Schwartz_exp(output$creatinine_serum,
+                                            output$height_crea_serum / 100)
+}
+
 # calculate eGFR (CKDEpi) on followup
 if (have_followup_data) {
   print("Calculating eGFR creat (CKDEpi) for followup")
@@ -585,6 +632,10 @@ if (have_followup_data) {
   output$egfr_ckdepi_followup = NA
 }
 
+if (pediatric_mode && have_followup_data) {
+  print("WARNING: Pediatric GFR calculations for follow-up data not supported - please contact us.")
+}
+
 # windsorize baseline eGFR
 egfr_low = length(which(output$egfr_ckdepi_creat < 15))
 egfr_high = length(which(output$egfr_ckdepi_creat > 200))
@@ -593,6 +644,17 @@ print(paste("Windsorize", egfr_high, "eGFR values above 200 ml/min/1.73qm"))
 
 output$egfr_ckdepi_creat = ifelse(output$egfr_ckdepi_creat < 15, 15, output$egfr_ckdepi_creat)
 output$egfr_ckdepi_creat = ifelse(output$egfr_ckdepi_creat > 200, 200, output$egfr_ckdepi_creat)
+
+# windsorize pediatric eGFR
+if (pediatric_mode) {
+  egfr_low = length(which(output$egfr_pediatric_creat < 15))
+  egfr_high = length(which(output$egfr_pediatric_creat > 200))
+  print(paste("Windsorize", egfr_low, "pediatric eGFR values below 15 ml/min/1.73qm"))
+  print(paste("Windsorize", egfr_high, "pediatric eGFR values above 200 ml/min/1.73qm"))
+  
+  output$egfr_pediatric_creat = ifelse(output$egfr_pediatric_creat < 15, 15, output$egfr_pediatric_creat)
+  output$egfr_pediatric_creat = ifelse(output$egfr_pediatric_creat > 200, 200, output$egfr_pediatric_creat)
+}
 
 # windsorize follow-up eGFR
 egfr_fu_low = length(which(output$egfr_ckdepi_followup < 15))
@@ -649,6 +711,10 @@ output$urea_serum = NULL
 
 # calculate CKD
 output$ckd = ifelse(output$egfr_ckdepi_creat < 60, 1, 0)
+if (pediatric_mode) {
+  print("INFO: Use pediatric eGFR for CKD definition")
+  output$ckd = ifelse(output$egfr_pediatric_creat < 60, 1, 0)
+}
 
 # calculate microalbuminuria
 output$microalbuminuria = NA
@@ -675,6 +741,11 @@ output$creat_dm = ifelse(output$diabetes_crea_serum == "1", output$creatinine_se
 
 output$egfr_ckdepi_creat_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$egfr_ckdepi_creat)
 output$egfr_ckdepi_creat_dm = ifelse(output$diabetes_crea_serum == "1", output$egfr_ckdepi_creat, NA)
+
+if (pediatric_mode) {
+  output$egfr_pediatric_creat_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$egfr_pediatric_creat)
+  output$egfr_pediatric_creat_dm = ifelse(output$diabetes_crea_serum == "1", output$egfr_pediatric_creat, NA)
+}
 
 output$ckd_nondm = ifelse(output$diabetes_crea_serum == "1", NA, output$ckd)
 output$ckd_dm = ifelse(output$diabetes_crea_serum == "1", output$ckd, NA)
@@ -718,6 +789,14 @@ stratum_columns = c(
   "gout_male",
   "gout_female"
 )
+
+if (pediatric_mode) {
+  stratum_columns = c(
+    stratum_columns,
+    "egfr_pediatric_creat_nondm",
+    "egfr_pediatric_creat_dm"
+  )
+}
 
 if (have_followup_data) {
   stratum_columns = c(
@@ -773,6 +852,12 @@ add_transform("bun_serum ~ age_bun_urea + sex_male", "ln", "none")
 add_transform("egfr_ckdepi_creat ~ age_crea_serum + sex_male", "ln", "none")
 add_transform("egfr_ckdepi_creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
 add_transform("egfr_ckdepi_creat_dm ~ age_crea_serum + sex_male", "ln", "none")
+
+if (pediatric_mode) {
+  add_transform("egfr_pediatric_creat ~ age_crea_serum + sex_male", "ln", "none")
+  add_transform("egfr_pediatric_creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
+  add_transform("egfr_pediatric_creat_dm ~ age_crea_serum + sex_male", "ln", "none")
+}
 
 if (have_followup_data) {
   add_transform("egfr_decline ~ age_crea_serum + sex_male + diabetes_crea_serum", "none", "none")
@@ -841,9 +926,15 @@ print("Writing output")
 phenotype = data.frame(
   index = output$index,
   individual_id = output$individual_id,
-  eGFR_overall = output$ln_egfr_ckdepi_creat_residuals,
-  eGFR_DM = output$ln_egfr_ckdepi_creat_dm_residuals,
-  eGFR_nonDM = output$ln_egfr_ckdepi_creat_nondm_residuals,
+  eGFR_overall = ifelse(pediatric_mode, 
+                        output$ln_egfr_pediatric_creat_residuals, 
+                        output$ln_egfr_ckdepi_creat_residuals),
+  eGFR_DM = ifelse(pediatric_mode, 
+                   output$ln_egfr_pediatric_creat_dm_residuals, 
+                   output$ln_egfr_ckdepi_creat_dm_residuals),
+  eGFR_nonDM = ifelse(pediatric_mode, 
+                      output$ln_egfr_pediatric_creat_nondm_residuals, 
+                      output$ln_egfr_ckdepi_creat_nondm_residuals),
   creatinine_overall = output$ln_creatinine_serum_residuals,
   UACR_overall = output$ln_uacr_residuals_invnorm,
   UACR_DM = output$ln_uacr_dm_residuals_invnorm,
@@ -904,6 +995,11 @@ check_median_by_range("uacr", 0, 200)
 check_median_by_range("bun_serum", 5, 20)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 check_median_by_range("creatinine_serum_followup", 0.5, 2.5)
+
+if (pediatric_mode) {
+  check_median_by_range("egfr_pediatric_creat", 0, 200)
+  check_median_by_range("height_crea_serum", 30, 180)
+}
 
 check_categorial("sex_male", c(0, 1))
 check_categorial("race_black", c(0, 1))
@@ -983,6 +1079,13 @@ quantitative_variables = c(
   "creatinine_urinary",
   as.character(transformations$variable)
 )
+
+if (pediatric_mode) {
+  quantitative_variables = c(
+    quantitative_variables,
+    "height_crea_serum"
+  )
+}
 
 for (variable in quantitative_variables) {
   if (calc_missingness(variable) == 1) {
