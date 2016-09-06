@@ -156,6 +156,7 @@ column_age_gout = Sys.getenv("COLUMN_AGE_GOUT")
 column_age_urine = Sys.getenv("COLUMN_AGE_URINE")
 column_age_blood_followup = Sys.getenv("COLUMN_AGE_BLOOD_FOLLOWUP")
 column_height_crea_serum = Sys.getenv("COLUMN_HEIGHT_CREA_SERUM")
+column_height_followup = Sys.getenv("COLUMN_HEIGHT_FOLLOWUP")
 column_sex_male = Sys.getenv("COLUMN_SEX_MALE")
 column_race_black = Sys.getenv("COLUMN_RACE_BLACK")
 column_creatinine_serum = Sys.getenv("COLUMN_CREATININE_SERUM")
@@ -198,7 +199,9 @@ optional_columns = c(
 
 if (pediatric_mode) {
   # don't even mention for adults
-  optional_columns = c(optional_columns, "column_height_crea_serum")
+  optional_columns = c(optional_columns, 
+                       "column_height_crea_serum",
+                       "column_height_followup")
 }
 
 all_columns = c(mandatory_columns, optional_columns)
@@ -413,6 +416,13 @@ if (have_followup_data) {
       add_error("Inconsistent follow-up age: Less than baseline age.")
     }
   }
+  
+  if (pediatric_mode) {
+    have_pheno_height_followup = length(which(!is.na(data[, column_height_followup]))) > 0
+    if (!have_pheno_height_followup) {
+      add_error("Follow-up data available, but no follow-up height.")
+    }
+  }  
 }
 
 
@@ -627,13 +637,15 @@ if (have_followup_data) {
   print("Calculating eGFR creat (CKDEpi) for followup")
   output$egfr_ckdepi_followup = CKDEpi.creat(output$creatinine_serum_followup, output$sex_male,
                                         output$age_blood_followup, output$race_black)
+  
+  if (pediatric_mode) {
+    print("Calculating pediatric eGFR creat (Schwartz) for follow-up")
+    output$egfr_pediatric_followup = eGFR_Schwartz_exp(output$creatinine_serum_followup,
+                                                    output$height_followup / 100)
+  }
 } else {
   print("No followup creatinine/age available.")
   output$egfr_ckdepi_followup = NA
-}
-
-if (pediatric_mode && have_followup_data) {
-  print("WARNING: Pediatric GFR calculations for follow-up data not supported - please contact us.")
 }
 
 # windsorize baseline eGFR
@@ -664,6 +676,17 @@ print(paste("Windsorize", egfr_fu_high, "eGFR follow-up values above 200 ml/min/
 
 output$egfr_ckdepi_followup = ifelse(output$egfr_ckdepi_followup < 15, 15, output$egfr_ckdepi_followup)
 output$egfr_ckdepi_followup = ifelse(output$egfr_ckdepi_followup > 200, 200, output$egfr_ckdepi_followup)
+
+# windsorize pediatric follow-up eGFR
+if (pediatric_mode) {
+  egfr_fu_low = length(which(output$egfr_pediatric_followup < 15))
+  egfr_fu_high = length(which(output$egfr_pediatric_followup > 200))
+  print(paste("Windsorize", egfr_fu_low, "pediatric eGFR follow-up values below 15 ml/min/1.73qm"))
+  print(paste("Windsorize", egfr_fu_high, "pediatric eGFR follow-up values above 200 ml/min/1.73qm"))
+  
+  output$egfr_pediatric_followup = ifelse(output$egfr_pediatric_followup < 15, 15, output$egfr_pediatric_followup)
+  output$egfr_pediatric_followup = ifelse(output$egfr_pediatric_followup > 200, 200, output$egfr_pediatric_followup)
+}
 
 # windsorize baseline creatinine
 crea_nonblack_low = length(which(output$creatinine_serum < 0.03 & output$race_black == 0))
@@ -727,12 +750,21 @@ output[uacr_medium, "microalbuminuria"] = NA
 
 # calculate longitudinal phenotypes
 if (have_followup_data) {
-  print("calculate longitudinal phenotypes")
   time_diff = output$age_blood_followup - output$age_crea_serum
-  check.decline.variables(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
-  output$ckdi25 = calc_CKDi25(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
-  output$egfr_decline = calc_eGFRdecline(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
-  output$rapid3 = calc_rapid3(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
+  
+  if (!pediatric_mode) {
+    print("calculate longitudinal phenotypes")
+    check.decline.variables(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
+    output$ckdi25 = calc_CKDi25(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup)
+    output$egfr_decline = calc_eGFRdecline(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
+    output$rapid3 = calc_rapid3(output$egfr_ckdepi_creat, output$egfr_ckdepi_followup, time_diff)
+  } else {
+    print("calculate longitudinal phenotypes (pediatric mode)")
+    check.decline.variables(output$egfr_pediatric_creat, output$egfr_pediatric_followup, time_diff)
+    output$ckdi25 = calc_CKDi25(output$egfr_pediatric_creat, output$egfr_pediatric_followup)
+    output$egfr_decline = calc_eGFRdecline(output$egfr_pediatric_creat, output$egfr_pediatric_followup, time_diff)
+    output$rapid3 = calc_rapid3(output$egfr_pediatric_creat, output$egfr_pediatric_followup, time_diff)
+  }
 }
 
 # stratify creatinine, eGFR, CKD, gout, uric acid
@@ -999,6 +1031,7 @@ check_median_by_range("creatinine_serum_followup", 0.5, 2.5)
 if (pediatric_mode) {
   check_median_by_range("egfr_pediatric_creat", 0, 200)
   check_median_by_range("height_crea_serum", 30, 180)
+  check_median_by_range("height_followup", 30, 180)
 }
 
 check_categorial("sex_male", c(0, 1))
@@ -1083,7 +1116,8 @@ quantitative_variables = c(
 if (pediatric_mode) {
   quantitative_variables = c(
     quantitative_variables,
-    "height_crea_serum"
+    "height_crea_serum",
+    "height_followup"
   )
 }
 
