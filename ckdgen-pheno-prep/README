@@ -21,3 +21,23 @@ If something does not work for you, please do not hesitate to contact me.
 Please state the R version you are using.
 
 For Windows, please use Cygwin and ensure "Rscript" is in your PATH.
+
+
+
+
+INSTRUCTIONS FOR PEDIATRIC STUDIES
+
+For pediatric studies, we provide a version of the script which uses
+the exponential Schwartz equation to calculate the baseline (and follow-up) eGFR.
+
+In order to use this script, your input data file needs additional columns:
+
+* The column "height" with the height of the individual (unit: "cm") at the timepoint of
+  serum creatinine measurement is mandatory. 
+* The column "height_fu" with the height (unit: "cm") at the timepoint of follow-up
+  is optional.
+  
+The parameters file is unchanged.
+
+Please use this call:
+	"./ckdgen-pheno-prep-pediatric.sh params-pediatric"
