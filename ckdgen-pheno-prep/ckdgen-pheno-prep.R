@@ -955,16 +955,17 @@ for (i in 1:nrow(transformations)) {
 # make GWAS phenotype output file with less columns
 print("Writing output")
 
+pediatric_mode_vec = rep(pediatric_mode,nrow(output))
 phenotype = data.frame(
   index = output$index,
   individual_id = output$individual_id,
-  eGFR_overall = ifelse(pediatric_mode, 
+  eGFR_overall = ifelse(pediatric_mode_vec, 
                         output$ln_egfr_pediatric_creat_residuals, 
                         output$ln_egfr_ckdepi_creat_residuals),
-  eGFR_DM = ifelse(pediatric_mode, 
+  eGFR_DM = ifelse(pediatric_mode_vec, 
                    output$ln_egfr_pediatric_creat_dm_residuals, 
                    output$ln_egfr_ckdepi_creat_dm_residuals),
-  eGFR_nonDM = ifelse(pediatric_mode, 
+  eGFR_nonDM = ifelse(pediatric_mode_vec, 
                       output$ln_egfr_pediatric_creat_nondm_residuals, 
                       output$ln_egfr_ckdepi_creat_nondm_residuals),
   creatinine_overall = output$ln_creatinine_serum_residuals,
