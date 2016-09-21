@@ -678,7 +678,7 @@ output$egfr_ckdepi_followup = ifelse(output$egfr_ckdepi_followup < 15, 15, outpu
 output$egfr_ckdepi_followup = ifelse(output$egfr_ckdepi_followup > 200, 200, output$egfr_ckdepi_followup)
 
 # windsorize pediatric follow-up eGFR
-if (pediatric_mode) {
+if (pediatric_mode && have_followup_data) {
   egfr_fu_low = length(which(output$egfr_pediatric_followup < 15))
   egfr_fu_high = length(which(output$egfr_pediatric_followup > 200))
   print(paste("Windsorize", egfr_fu_low, "pediatric eGFR follow-up values below 15 ml/min/1.73qm"))
