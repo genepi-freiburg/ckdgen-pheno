@@ -1,3 +1,7 @@
+### WARNING ###
+# This is a reduced version of the CKDGen consortium round 4 phenotype script. The output is solely intended for the CKDGen consortium round 2 Meta EWAS. 
+# Logging isn't fully adjusted.
+
 Usage instructions
 
 1. Rename the parameters file to reflect your study, e.g.
