@@ -138,7 +138,7 @@ if (class(data) == "try-error") {
 }
 
 print(paste("Got", nrow(data), "rows and", ncol(data), "columns"))
-if (nrow(data) < 100 || ncol(data) < 4) {
+if (nrow(data) < 50 || ncol(data) < 4) {
   stop("Error reading input file - data seems incomplete. Please check the logs.")
 }
 
@@ -173,24 +173,24 @@ column_creatinine_serum_followup = Sys.getenv("COLUMN_CREATININE_SERUM_FOLLOWUP"
   
 mandatory_columns = c(
   "column_individual_id",
+  "column_age_crea_serum",
   "column_sex_male",
   "column_race_black",
-  "column_hypertension"
+  "column_creatinine_serum",
+  "column_creatinine_urinary",
+  "column_albumin_urinary",
+  "column_urea_serum"
 )
 
 optional_columns = c(
-  "column_age_crea_serum",
+  "column_hypertension",
   "column_age_bun_urea",
   "column_age_uric_acid",
   "column_age_gout",
   "column_age_urine",
   "column_age_blood_followup",
-  "column_creatinine_serum",
   "column_uric_acid_serum",
-  "column_creatinine_urinary",
-  "column_albumin_urinary",
   "column_bun_serum",
-  "column_urea_serum",
   "column_creatinine_serum_followup",
   "column_diabetes_crea_serum",
   "column_diabetes_urine",
@@ -248,6 +248,18 @@ for (mandatory_column in mandatory_columns) {
                 mandatory_column_name))
   }
 }
+
+### extend CKDGen EWAS data.frame to match CKDGen GWAS requirements ###
+
+print("Input data is partially overwritten and adjusted to match the CKDgen phenotype generation script. Adjustments are only performed in columns irrelevant to the EWAS phenotypes.")
+#  data.save <- data
+ data <- data[,mandatory_columns]
+#  data[,c("column_age_bun_urea","column_age_uric_acid","column_age_gout","column_age_urine","column_age_blood_followup")] <- cbind(rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)))
+#  data[,c("column_hypertension")] <- rep(NA,nrow(data))
+#  data[,c("column_height_crea_serum","column_height_followup","column_bun_serum",
+#  		"column_uric_acid_serum","column_diabetes_crea_serum","column_diabetes_urine","column_gout","column_creatinine_serum_followup")] <- cbind(rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)))
+#  data[,c("column_height_crea_serum","column_height_followup","column_bun_serum",
+#  		"column_uric_acid_serum","column_diabetes_crea_serum","column_diabetes_urine","column_gout","column_creatinine_serum_followup")] <- cbind(rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)))
 
 
 ### CHECK BUN/UREA COLUMN NAME PARAMETERS
@@ -1037,10 +1049,10 @@ if (pediatric_mode) {
 
 check_categorial("sex_male", c(0, 1))
 check_categorial("race_black", c(0, 1))
-check_categorial("hypertension", c(0, 1))
-check_categorial("diabetes_crea_serum", c(0, 1))
-check_categorial("diabetes_urine", c(0, 1))
-check_categorial("gout", c(0, 1))
+check_categorial("hypertension", c(0, 1,NA))
+check_categorial("diabetes_crea_serum", c(0, 1,NA))
+check_categorial("diabetes_urine", c(0, 1, NA))
+check_categorial("gout", c(0, 1, NA))
 
 if (nrow(errors) > 0) {
   print("WARNING: There have been messages during the variable consistency checks. Please check logs.")
