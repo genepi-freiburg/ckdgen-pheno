@@ -3,7 +3,7 @@
 #####################################################################
 
 # Name of your study
-STUDY_NAME="GCKD"
+STUDY_NAME="ARIC"
 
 # Name (and path) of YOUR phenotype file: replace with your file name.
 INPUT_FILE="phenotype.txt"

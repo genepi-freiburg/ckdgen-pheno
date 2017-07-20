@@ -1,43 +1,17 @@
 Usage instructions
 
 1. Rename the parameters file to reflect your study, e.g.
-	"cp params-template params-gckd"
+	"cp params-template params-ARIC"
 
 2. Edit the parameters file to reflect your input file.
    The parameters file itself contains detailed instructions.
 
 3. Run the phenotype generation script, passing the parameters file, e.g.
-	"./ckdgen-pheno-prep.sh params-gckd"
+	"./ckdgen-pheno-prep.sh params-ARIC"
 
 4. Output is written both to the screen and to a log file. Please examine
    the output carefully. If there are problems, please try to fix the
    parameters in the parameters file or the data in your input file. 
-   If you need assistance, please do not hesitate to contact us.
-
-
-The script has been tested both on Linux and Windows systems with
-different R versions (3.0.x, 3.2.x and 3.3.0/3.3.1).
-If something does not work for you, please do not hesitate to contact me.
-Please state the R version you are using.
+   If you need assistance, please do not hesitate to contact us (schlosser@imbi.uni-freiburg.de).
 
 For Windows, please use Cygwin and ensure "Rscript" is in your PATH.
-
-
-
-
-INSTRUCTIONS FOR PEDIATRIC STUDIES
-
-For pediatric studies, we provide a version of the script which uses
-the exponential Schwartz equation to calculate the baseline (and follow-up) eGFR.
-
-In order to use this script, your input data file needs additional columns:
-
-* The column "height" with the height of the individual (unit: "cm") at the timepoint of
-  serum creatinine measurement is mandatory. 
-* The column "height_fu" with the height (unit: "cm") at the timepoint of follow-up
-  is optional.
-  
-The parameters file is unchanged.
-
-Please use this call:
-	"./ckdgen-pheno-prep-pediatric.sh params-pediatric"
