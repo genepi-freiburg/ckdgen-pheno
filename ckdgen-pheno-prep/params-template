@@ -28,8 +28,8 @@ URATE_UNIT="1"
 # Example: 10 mg/L for HemoCue® and 3 mg/L for ProSpec®
 LOD_URINARY_ALBUMIN=""
 
-# Jaffe assay for follow-up creatinine measurement in blood: 1 = Jaffe; 0 = other; may be empty
-JAFFE_BLOOD_FOLLOWUP="0"
+# Jaffe assay for follow-up creatinine measurement in blood: 1 = Jaffe; 0 = other; may be empty. Can be ignored. Don't alter.
+JAFFE_BLOOD_FOLLOWUP=""
 
-# year of serum creatinine laboratory assay (followup)
+# year of serum creatinine laboratory assay (followup). Can be ignored. Don't alter.
 YEAR_FOLLOWUP="2014"

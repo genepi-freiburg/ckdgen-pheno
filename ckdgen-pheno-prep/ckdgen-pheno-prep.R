@@ -28,6 +28,7 @@ input_file = Sys.getenv("INPUT_FILE")
 input_file_delimiter = Sys.getenv("INPUT_FILE_DELIMITER")
 error_file = Sys.getenv("ERROR_FILE")
 output_file = Sys.getenv("OUTPUT_FILE")
+output_file_EWAS = Sys.getenv("OUTPUT_FILE_EWAS")
 phenotype_file = Sys.getenv("PHENOTYPE_FILE")
 summary_output_file_txt = Sys.getenv("SUMMARY_OUTPUT_FILE_TXT")
 summary_output_file_pdf = Sys.getenv("SUMMARY_OUTPUT_FILE_PDF")
@@ -174,6 +175,7 @@ column_creatinine_serum_followup = Sys.getenv("COLUMN_CREATININE_SERUM_FOLLOWUP"
 mandatory_columns = c(
   "column_individual_id",
   "column_age_crea_serum",
+  "column_age_urine",
   "column_sex_male",
   "column_race_black",
   "column_creatinine_serum",
@@ -187,7 +189,6 @@ optional_columns = c(
   "column_age_bun_urea",
   "column_age_uric_acid",
   "column_age_gout",
-  "column_age_urine",
   "column_age_blood_followup",
   "column_uric_acid_serum",
   "column_bun_serum",
@@ -204,7 +205,9 @@ if (pediatric_mode) {
                        "column_height_followup")
 }
 
+
 all_columns = c(mandatory_columns, optional_columns)
+# all_columns = c(mandatory_columns)
 
 
 ### MAKE COLUMN NAMES CASE-INSENSITIVE
@@ -253,7 +256,8 @@ for (mandatory_column in mandatory_columns) {
 
 print("Input data is partially overwritten and adjusted to match the CKDgen phenotype generation script. Adjustments are only performed in columns irrelevant to the EWAS phenotypes.")
 #  data.save <- data
- data <- data[,mandatory_columns]
+data <- cbind(data[,sapply(mandatory_columns,get)], matrix(rep(NA, nrow(data)*length(optional_columns)), ncol=length(optional_columns)))
+colnames(data) <- c(sapply(mandatory_columns,get),sapply(optional_columns,get))
 #  data[,c("column_age_bun_urea","column_age_uric_acid","column_age_gout","column_age_urine","column_age_blood_followup")] <- cbind(rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)))
 #  data[,c("column_hypertension")] <- rep(NA,nrow(data))
 #  data[,c("column_height_crea_serum","column_height_followup","column_bun_serum",
@@ -325,7 +329,7 @@ have_age_followup = length(which(!is.na(data[, column_age_blood_followup]))) > 0
 
 check_missing_age("urinary creatinine/albumin", have_pheno_urine, have_age_urine)
 check_missing_age("serum creatinine", have_pheno_crea, have_age_crea)
-check_missing_age("BUN/urea", have_pheno_bun_urea, have_age_bun_urea)
+# check_missing_age("BUN/urea", have_pheno_bun_urea, have_age_bun_urea)
 check_missing_age("uric acid", have_pheno_uric_acid, have_age_uric_acid)
 check_missing_age("gout", have_pheno_gout, have_age_gout)
 check_missing_age("followup serum creatinine", have_pheno_followup, have_age_followup)
@@ -372,8 +376,8 @@ check_missing_diabetes = function(name, have_pheno, have_diabetes) {
 have_diabetes_crea = length(which(!is.na(data[, column_diabetes_crea_serum])))
 have_diabetes_urine = length(which(!is.na(data[, column_diabetes_urine])))
 
-check_missing_diabetes("urinary creatinine/albumin", have_pheno_urine, have_diabetes_urine)
-check_missing_diabetes("serum creatinine", have_pheno_crea, have_diabetes_crea)
+# check_missing_diabetes("urinary creatinine/albumin", have_pheno_urine, have_diabetes_urine)
+# check_missing_diabetes("serum creatinine", have_pheno_crea, have_diabetes_crea)
 
 
 ### CHECK URINARY CREATININE / ALBUMIN
@@ -637,14 +641,14 @@ print("Calculating eGFR creat (CKDEpi)")
 output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, 
                                         output$age_crea_serum, output$race_black)
 
-# calculate pediatric eGFR
+#calculate pediatric eGFR
 if (pediatric_mode) {
   print("Calculating pediatric eGFR creat (Schwartz)")
   output$egfr_pediatric_creat = eGFR_Schwartz_exp(output$creatinine_serum,
                                             output$height_crea_serum / 100)
 }
 
-# calculate eGFR (CKDEpi) on followup
+#calculate eGFR (CKDEpi) on followup
 if (have_followup_data) {
   print("Calculating eGFR creat (CKDEpi) for followup")
   output$egfr_ckdepi_followup = CKDEpi.creat(output$creatinine_serum_followup, output$sex_male,
@@ -891,7 +895,7 @@ add_transform("uacr_dm ~ age_urine + sex_male", "ln", "invnorm")
 
 # log-transform and calculate residuals for: creatinine, BUN, eGFR
 add_transform("creatinine_serum ~ age_crea_serum + sex_male", "ln", "none")
-add_transform("bun_serum ~ age_bun_urea + sex_male", "ln", "none")
+# add_transform("bun_serum ~ age_bun_urea + sex_male", "ln", "none")
 
 add_transform("egfr_ckdepi_creat ~ age_crea_serum + sex_male", "ln", "none")
 add_transform("egfr_ckdepi_creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
@@ -971,32 +975,32 @@ pediatric_mode_vec = rep(pediatric_mode,nrow(output))
 phenotype = data.frame(
   index = output$index,
   individual_id = output$individual_id,
-  eGFR_overall = ifelse(pediatric_mode_vec, 
-                        output$ln_egfr_pediatric_creat_residuals, 
-                        output$ln_egfr_ckdepi_creat_residuals),
-  eGFR_DM = ifelse(pediatric_mode_vec, 
-                   output$ln_egfr_pediatric_creat_dm_residuals, 
-                   output$ln_egfr_ckdepi_creat_dm_residuals),
-  eGFR_nonDM = ifelse(pediatric_mode_vec, 
-                      output$ln_egfr_pediatric_creat_nondm_residuals, 
-                      output$ln_egfr_ckdepi_creat_nondm_residuals),
+#   eGFR_overall = ifelse(pediatric_mode_vec, 
+#                         output$ln_egfr_pediatric_creat_residuals, 
+#                         output$ln_egfr_ckdepi_creat_residuals),
+#   eGFR_DM = ifelse(pediatric_mode_vec, 
+#                    output$ln_egfr_pediatric_creat_dm_residuals, 
+#                    output$ln_egfr_ckdepi_creat_dm_residuals),
+#   eGFR_nonDM = ifelse(pediatric_mode_vec, 
+#                       output$ln_egfr_pediatric_creat_nondm_residuals, 
+#                       output$ln_egfr_ckdepi_creat_nondm_residuals),
   creatinine_overall = output$ln_creatinine_serum_residuals,
   UACR_overall = output$ln_uacr_residuals_invnorm,
-  UACR_DM = output$ln_uacr_dm_residuals_invnorm,
-  UACR_nondm = output$ln_uacr_nondm_residuals_invnorm,
-  bun_overall = output$ln_bun_serum_residuals,
-  uric_acid_overall = output$uric_acid_serum_residuals,
-  uric_acid_women = output$uric_acid_serum_female_residuals,
-  uric_acid_men = output$uric_acid_serum_male_residuals,
+#   UACR_DM = output$ln_uacr_dm_residuals_invnorm,
+#   UACR_nondm = output$ln_uacr_nondm_residuals_invnorm,
+#   bun_overall = output$ln_bun_serum_residuals,
+#   uric_acid_overall = output$uric_acid_serum_residuals,
+#   uric_acid_women = output$uric_acid_serum_female_residuals,
+#   uric_acid_men = output$uric_acid_serum_male_residuals,
   CKD_overall = output$ckd,
-  CKD_DM = output$ckd_dm,
-  CKD_nonDM = output$ckd_nondm,
-  MA_overall = output$microalbuminuria,
-  MA_DM = output$microalbuminuria_dm,
-  MA_nonDM = output$microalbuminuria_nondm,
-  Gout_overall = output$gout,
-  Gout_women = output$gout_female,
-  Gout_men = output$gout_male
+#   CKD_DM = output$ckd_dm,
+#   CKD_nonDM = output$ckd_nondm,
+#   MA_DM = output$microalbuminuria_dm,
+#   MA_nonDM = output$microalbuminuria_nondm,
+#   Gout_overall = output$gout,
+#   Gout_women = output$gout_female,
+#   Gout_men = output$gout_male,
+  MA_overall = output$microalbuminuria
 )
 
 if (have_followup_data) {
@@ -1010,8 +1014,7 @@ if (have_followup_data) {
   phenotype$egfr_decline_ckd = output$egfr_decline_ckd_residuals
 }
 
-write.table(phenotype, phenotype_file, row.names = F, col.names = T, quote = F,
-            sep = "\t")
+# write.table(phenotype, phenotype_file, row.names = F, col.names = T, quote = F, sep = "\t")
 
 ### CONSISTENCY CHECKS ON VARIABLES
 
@@ -1062,7 +1065,11 @@ if (nrow(errors) > 0) {
 ### WRITE OUTPUT
 
 write.table(errors, error_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
-write.table(output, output_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
+# write.table(output, output_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
+
+EWAS_colnames <- c("index","individual_id","age_crea_serum","age_urine","sex_male","race_black","creatinine_serum","ln_creatinine_serum","creatinine_urinary","albumin_urinary","albumin_urinary_lod",
+"uacr","ln_uacr","egfr_ckdepi_creat","ln_egfr_ckdepi_creat","ckd","microalbuminuria")
+write.table(output[,EWAS_colnames],output_file_EWAS, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 
 
 ### PLOT OUTPUT
