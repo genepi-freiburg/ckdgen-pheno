@@ -175,17 +175,16 @@ column_creatinine_serum_followup = Sys.getenv("COLUMN_CREATININE_SERUM_FOLLOWUP"
 mandatory_columns = c(
   "column_individual_id",
   "column_age_crea_serum",
-  "column_age_urine",
   "column_sex_male",
   "column_race_black",
   "column_creatinine_serum",
   "column_creatinine_urinary",
-  "column_albumin_urinary",
-  "column_urea_serum"
+  "column_albumin_urinary"
 )
 
 optional_columns = c(
   "column_hypertension",
+  "column_age_urine",
   "column_age_bun_urea",
   "column_age_uric_acid",
   "column_age_gout",
@@ -195,7 +194,8 @@ optional_columns = c(
   "column_creatinine_serum_followup",
   "column_diabetes_crea_serum",
   "column_diabetes_urine",
-  "column_gout"
+  "column_gout",
+  "column_urea_serum"
 )
 
 if (pediatric_mode) {
@@ -327,7 +327,7 @@ have_age_uric_acid = length(which(!is.na(data[, column_age_uric_acid]))) > 0
 have_age_gout = length(which(!is.na(data[, column_age_gout]))) > 0
 have_age_followup = length(which(!is.na(data[, column_age_blood_followup]))) > 0
 
-check_missing_age("urinary creatinine/albumin", have_pheno_urine, have_age_urine)
+# check_missing_age("urinary creatinine/albumin", have_pheno_urine, have_age_urine)
 check_missing_age("serum creatinine", have_pheno_crea, have_age_crea)
 # check_missing_age("BUN/urea", have_pheno_bun_urea, have_age_bun_urea)
 check_missing_age("uric acid", have_pheno_uric_acid, have_age_uric_acid)
@@ -889,9 +889,9 @@ add_transform = function (formula, transform, postprocess) {
 transformations = data.frame()
 
 # rank-based inverse normal transformation for: log UACR
-add_transform("uacr ~ age_urine + sex_male", "ln", "invnorm")
-add_transform("uacr_nondm ~ age_urine + sex_male", "ln", "invnorm")
-add_transform("uacr_dm ~ age_urine + sex_male", "ln", "invnorm")
+add_transform("uacr ~ sex_male", "ln", "invnorm")
+# add_transform("uacr_nondm ~ age_urine + sex_male", "ln", "invnorm")
+# add_transform("uacr_dm ~ age_urine + sex_male", "ln", "invnorm")
 
 # log-transform and calculate residuals for: creatinine, BUN, eGFR
 add_transform("creatinine_serum ~ age_crea_serum + sex_male", "ln", "none")
@@ -985,7 +985,7 @@ phenotype = data.frame(
 #                       output$ln_egfr_pediatric_creat_nondm_residuals, 
 #                       output$ln_egfr_ckdepi_creat_nondm_residuals),
   creatinine_overall = output$ln_creatinine_serum_residuals,
-  UACR_overall = output$ln_uacr_residuals_invnorm,
+#   UACR_overall = output$ln_uacr_residuals_invnorm,
 #   UACR_DM = output$ln_uacr_dm_residuals_invnorm,
 #   UACR_nondm = output$ln_uacr_nondm_residuals_invnorm,
 #   bun_overall = output$ln_bun_serum_residuals,
@@ -1067,8 +1067,14 @@ if (nrow(errors) > 0) {
 write.table(errors, error_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 # write.table(output, output_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 
-EWAS_colnames <- c("index","individual_id","age_crea_serum","age_urine","sex_male","race_black","creatinine_serum","ln_creatinine_serum","creatinine_urinary","albumin_urinary","albumin_urinary_lod",
-"uacr","ln_uacr","egfr_ckdepi_creat","ln_egfr_ckdepi_creat","ckd","microalbuminuria")
+EWAS_colnames <- c("index","individual_id","age_crea_serum","sex_male","race_black","creatinine_serum","creatinine_urinary","albumin_urinary","albumin_urinary_lod",
+"uacr","ln_uacr","egfr_ckdepi_creat","ckd","microalbuminuria")
+colnames(output)
+
+print(EWAS_colnames)
+
+print(EWAS_colnames[which(EWAS_colnames %in% colnames(output))])
+
 write.table(output[,EWAS_colnames],output_file_EWAS, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 
 
