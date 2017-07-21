@@ -1067,7 +1067,7 @@ if (nrow(errors) > 0) {
 write.table(errors, error_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 # write.table(output, output_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 
-EWAS_colnames <- c("index","individual_id","age_crea_serum","sex_male","race_black","creatinine_serum","creatinine_urinary","albumin_urinary","albumin_urinary_lod",
+EWAS_colnames <- c("index","individual_id","age_crea_serum","sex_male","race_black","creatinine_serum","creatinine_urinary","albumin_urinary",
 "uacr","ln_uacr","egfr_ckdepi_creat","ckd","microalbuminuria")
 colnames(output)
 

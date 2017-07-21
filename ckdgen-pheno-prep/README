@@ -1,6 +1,7 @@
 ### WARNING ###
 # This is a reduced version of the CKDGen consortium round 4 phenotype script. The output is solely intended for the CKDGen consortium round 2 Meta EWAS. 
 # Logging isn't fully adjusted.
+# These scripts can only be applied for participants above the age of 18. If your study contains children please contact us. (schlosser@imbi.uni-freiburg.de)
 
 Usage instructions
 
