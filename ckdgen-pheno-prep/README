@@ -10,11 +10,24 @@ Usage instructions
 2. Edit the parameters file to reflect your input file.
    The parameters file itself contains detailed instructions.
 
-3. Run the phenotype generation script, passing the parameters file, e.g.
+3. Generate a tab separated file with the input variables. The following columns are mandatory and all other columns will be ignored:
+COLUMN_NAME	DEFINITION
+iid		Use your unique participant identifierage_screa	Age in years at the visit at which serum creatinine was measured. For studies with prospective data, this refers to baseline visit.
+male		Code: 1 = male, 0 = female
+black		Code: 1 = African or African American ancestry, 0 = any other ancestry
+screa		As measured, possible units: mg/dl or μmol/l (units will be specified in the parameter file)
+ucrea		As measured, possible units: mg/dl or μmol/l (units will be specified in the parameter file)
+ualb		use/convert to unit mg/l		Handling of values below the limit of detection (LOD) of the albumin assay:			Do not set them to missing.  			If numerical values below LOD are available, leave them as they are, but specify the assay LOD in the script parameter file as described in the next section.  			If they are reported as “<LOD” (e.g.: “<3”), drop the “<” operator, leave numerical value of the LOD (e.g.: 3), and specify the assay LOD in the script parameter file.  			Ensure that the variable has only numeric values.
+example R code for export:
+> tmp <- YOUR_DATA
+> colnames(tmp) <- c("iid","age_screa", "male", "black", "screa", "ucrea", "ualb")
+> write.table(file="phenodata.txt",tmp, col.names=TRUE, row.names=FALSE, sep="\t")
+
+4. Run the phenotype generation script, passing the parameters file, e.g.
 	"./ckdgen-pheno-prep.sh params-ARIC"
 
-4. Output is written both to the screen and to a log file. Please examine
-   the output carefully. If there are problems, please try to fix the
+5. Output is written both to the screen and to a log file. Please examine
+   the output. If there are problems, please try to fix the
    parameters in the parameters file or the data in your input file. 
    If you need assistance, please do not hesitate to contact us (schlosser@imbi.uni-freiburg.de).
 
