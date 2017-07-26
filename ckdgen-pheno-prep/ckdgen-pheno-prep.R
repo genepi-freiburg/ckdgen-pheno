@@ -322,7 +322,7 @@ have_age_followup = length(which(!is.na(data[, column_age_blood_followup]))) > 0
 # check_missing_age("urinary creatinine/albumin", have_pheno_urine, have_age_urine)
 check_missing_age("serum creatinine", have_pheno_crea, have_age_crea)
 # check_missing_age("BUN/urea", have_pheno_bun_urea, have_age_bun_urea)
-check_missing_age("uric acid", have_pheno_uric_acid, have_age_uric_acid)
+# check_missing_age("uric acid", have_pheno_uric_acid, have_age_uric_acid)
 check_missing_age("gout", have_pheno_gout, have_age_gout)
 check_missing_age("followup serum creatinine", have_pheno_followup, have_age_followup)
 
@@ -907,9 +907,9 @@ if (have_followup_data) {
 }
 
 # no transformation for: uric_acid
-add_transform("uric_acid_serum ~ age_uric_acid + sex_male", "none", "none")
-add_transform("uric_acid_serum_female ~ age_uric_acid", "none", "none")
-add_transform("uric_acid_serum_male ~ age_uric_acid", "none", "none")
+# add_transform("uric_acid_serum ~ age_uric_acid + sex_male", "none", "none")
+# add_transform("uric_acid_serum_female ~ age_uric_acid", "none", "none")
+# add_transform("uric_acid_serum_male ~ age_uric_acid", "none", "none")
 
 for (i in 1:nrow(transformations)) {
   variable = as.character(transformations[i, "variable"])
