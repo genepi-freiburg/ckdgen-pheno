@@ -179,7 +179,8 @@ mandatory_columns = c(
   "column_race_black",
   "column_creatinine_serum",
   "column_creatinine_urinary",
-  "column_albumin_urinary"
+  "column_albumin_urinary",
+  "column_uric_acid_serum"
 )
 
 optional_columns = c(
@@ -189,7 +190,6 @@ optional_columns = c(
   "column_age_uric_acid",
   "column_age_gout",
   "column_age_blood_followup",
-  "column_uric_acid_serum",
   "column_bun_serum",
   "column_creatinine_serum_followup",
   "column_diabetes_crea_serum",
@@ -255,16 +255,8 @@ for (mandatory_column in mandatory_columns) {
 ### extend CKDGen EWAS data.frame to match CKDGen GWAS requirements ###
 
 print("Input data is partially overwritten and adjusted to match the CKDgen phenotype generation script. Adjustments are only performed in columns irrelevant to the EWAS phenotypes.")
-#  data.save <- data
 data <- cbind(data[,sapply(mandatory_columns,get)], matrix(rep(NA, nrow(data)*length(optional_columns)), ncol=length(optional_columns)))
 colnames(data) <- c(sapply(mandatory_columns,get),sapply(optional_columns,get))
-#  data[,c("column_age_bun_urea","column_age_uric_acid","column_age_gout","column_age_urine","column_age_blood_followup")] <- cbind(rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)))
-#  data[,c("column_hypertension")] <- rep(NA,nrow(data))
-#  data[,c("column_height_crea_serum","column_height_followup","column_bun_serum",
-#  		"column_uric_acid_serum","column_diabetes_crea_serum","column_diabetes_urine","column_gout","column_creatinine_serum_followup")] <- cbind(rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)))
-#  data[,c("column_height_crea_serum","column_height_followup","column_bun_serum",
-#  		"column_uric_acid_serum","column_diabetes_crea_serum","column_diabetes_urine","column_gout","column_creatinine_serum_followup")] <- cbind(rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)),rep(NA,nrow(data)))
-
 
 ### CHECK BUN/UREA COLUMN NAME PARAMETERS
 
@@ -1067,13 +1059,8 @@ if (nrow(errors) > 0) {
 write.table(errors, error_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 # write.table(output, output_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 
-EWAS_colnames <- c("index","individual_id","age_crea_serum","sex_male","race_black","creatinine_serum","creatinine_urinary","albumin_urinary",
-"uacr","ln_uacr","egfr_ckdepi_creat","ckd","microalbuminuria")
+EWAS_colnames <- c("index","individual_id","egfr_ckdepi_creat","ckd","ln_uacr","microalbuminuria","uric_acid_serum")
 colnames(output)
-
-print(EWAS_colnames)
-
-print(EWAS_colnames[which(EWAS_colnames %in% colnames(output))])
 
 write.table(output[,EWAS_colnames],output_file_EWAS, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 
