@@ -198,6 +198,55 @@ optional_columns = c(
   "column_urea_serum"
 )
 
+
+
+
+### Auto generation of fake data
+age_crea_serum_name = get("column_age_crea_serum")
+sex_male_name = get("column_sex_male")
+race_black_name = get("column_race_black")
+crea_serum_name = get("column_creatinine_serum")
+crea_uri_name = get("column_creatinine_urinary")
+albu_uri_name = get("column_albumin_urinary")
+uric_acid_serum_name = get("column_uric_acid_serum")
+
+egfr_out <- all(c(age_crea_serum_name, sex_male_name, race_black_name, crea_serum_name) %in% colnames(data))
+ln_uacr_out <- all(c(albu_uri_name, crea_uri_name) %in% colnames(data))
+uric_acid_serum_out <- uric_acid_serum_name %in% colnames(data)
+
+if(!egfr_out & !ln_uacr_out & !uric_acid_serum_out){
+	print("To many missing variables in input. Cannot calculate eGFR, CKD, uacr, MA or uric acid.")
+}else{
+	if(!egfr_out){
+	  print("At least one of age_creatinine_serum, sex_male, race_black and creatinine_serum is missing. eGFR and CKD will not be calculated.")
+	  data <- data[,!(colnames(data) %in% c(age_crea_serum_name, sex_male_name, race_black_name, crea_serum_name))]
+	  tmp <- matrix(c(round((rnorm(nrow(data))*30)^2,digits=0),(rnorm(nrow(data))>0),rep(FALSE,nrow(data)),(rnorm(nrow(data))*30)^2),ncol=4)
+	  colnames(tmp) <- c(age_crea_serum_name, sex_male_name, race_black_name, crea_serum_name)
+	  data <- cbind(data,tmp)
+	}
+	if(!ln_uacr_out){
+	  print("At least one of urinary albumin and urinary creatinine is missing. UACR and MA will not be calculated.")
+  	  data <- data[,!(colnames(data) %in% c(albu_uri_name, crea_uri_name))]
+	  tmp <- matrix(c((rnorm(nrow(data))*30)^2,(rnorm(nrow(data))*30)^2),ncol=2)
+	  colnames(tmp) <- c(albu_uri_name, crea_uri_name)
+	  data <- cbind(data,tmp)
+	}
+	if(!uric_acid_serum_out){
+	  print("Uric acid serum is not provided. Output will be omitted.")
+	  data <- data[,!(colnames(data) %in% uric_acid_serum_name)]
+	  data <- cbind(data,c((rnorm(nrow(data))*30)^2))
+	  colnames(data)[ncol(data)] <- uric_acid_serum_name
+	}
+}
+
+
+
+
+
+
+
+
+
 if (pediatric_mode) {
   # don't even mention for adults
   optional_columns = c(optional_columns, 
@@ -1059,14 +1108,22 @@ if (nrow(errors) > 0) {
 write.table(errors, error_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 # write.table(output, output_file, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 
-EWAS_colnames <- c("index","individual_id","egfr_ckdepi_creat","ckd","ln_uacr","microalbuminuria","uric_acid_serum")
+EWAS_colnames <- c("index","individual_id")
+if(egfr_out){
+EWAS_colnames <- c(EWAS_colnames,"egfr_ckdepi_creat","ckd")
+}
+if(ln_uacr_out){
+EWAS_colnames <- c(EWAS_colnames,"ln_uacr","microalbuminuria")
+}
+if(uric_acid_serum_out){
+EWAS_colnames <- c(EWAS_colnames,"uric_acid_serum")
+}
 colnames(output)
 
 write.table(output[,EWAS_colnames],output_file_EWAS, row.names = FALSE, col.names = TRUE, quote = TRUE, sep = ",")
 
 
 ### PLOT OUTPUT
-
 pdf(summary_output_file_pdf)
 
 categorial_variables = c(
