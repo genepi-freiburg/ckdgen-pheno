@@ -1180,6 +1180,7 @@ quantitative_variables = c(
   "age_blood_followup",
   "albumin_urinary",
   "creatinine_urinary",
+  "uric_acid_serum",
   as.character(transformations$variable)
 )
 
