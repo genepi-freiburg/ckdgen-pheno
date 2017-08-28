@@ -1129,18 +1129,18 @@ pdf(summary_output_file_pdf)
 categorial_variables = c(
   "sex_male", 
   "race_black", 
-  "hypertension", 
-  "diabetes_crea_serum", 
-  "diabetes_urine", 
-  "gout",
+#  "hypertension", 
+#  "diabetes_crea_serum", 
+#  "diabetes_urine", 
+#  "gout",
   "ckd",
-  "microalbuminuria",
-  "ckd_nondm",
-  "ckd_dm",
-  "gout_male",
-  "gout_female",
-  "microalbuminuria_nondm",
-  "microalbuminuria_dm"
+#  "ckd_nondm",
+#  "ckd_dm",
+#  "gout_male",
+#  "gout_female",
+#  "microalbuminuria_nondm",
+#  "microalbuminuria_dm",
+  "microalbuminuria"
 )
 
 if (have_followup_data) {
@@ -1172,12 +1172,12 @@ for (categorial_variable in categorial_variables) {
 
 # quantitative plots
 quantitative_variables = c(
-  "age_urine",
+#  "age_urine",
   "age_crea_serum",
-  "age_bun_urea",
+#  "age_bun_urea",
   "age_uric_acid",
-  "age_gout",
-  "age_blood_followup",
+#  "age_gout",
+#  "age_blood_followup",
   "albumin_urinary",
   "creatinine_urinary",
   "uric_acid_serum",
