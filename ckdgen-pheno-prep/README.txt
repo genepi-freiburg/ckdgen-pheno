@@ -11,7 +11,7 @@ Usage instructions
 2. Edit the parameters file to reflect your input file.
    The parameters file itself contains detailed instructions.
 
-3. Generate a tab separated file with the input variables. The following columns are mandatory and all other columns will be ignored:
+3. Generate a tab separated file with the input variables. If not all of the following columns are available the script will omit output of the respective outcomes. All columns not listed below will be ignored:
 COLUMN_NAME	DEFINITION
 iid		Use your unique participant identifierage_screa	Age in years at the visit at which serum creatinine was measured. For studies with prospective data, this refers to baseline visit.
 male		Code: 1 = male, 0 = female
