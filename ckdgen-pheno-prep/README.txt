@@ -16,14 +16,14 @@ COLUMN_NAME	DEFINITION
 iid		Use your unique participant identifierage_screa	Age in years at the visit at which serum creatinine was measured. For studies with prospective data, this refers to baseline visit.
 male		Code: 1 = male, 0 = female
 black		Code: 1 = African or African American ancestry, 0 = any other ancestry
-screa		As measured, possible units: mg/dl or μmol/l (units will be specified in the parameter file)
-ucrea		As measured, possible units: mg/dl or μmol/l (units will be specified in the parameter file)
-ualb		use/convert to unit mg/l		Handling of values below the limit of detection (LOD) of the albumin assay:			Do not set them to missing.  			If numerical values below LOD are available, leave them as they are, but specify the assay LOD in the script parameter file as described in the next section.  			If they are reported as “<LOD” (e.g.: “<3”), drop the “<” operator, leave numerical value of the LOD (e.g.: 3), and specify the assay LOD in the script parameter file.  			Ensure that the variable has only numeric values.
+screa		Serum creatinine as measured, possible units: mg/dl or μmol/l (units will be specified in the parameter file)
+ucrea		Urin creatinine as measured, possible units: mg/dl or μmol/l (units will be specified in the parameter file)
+ualb		Urin albumin. Use/convert to unit mg/l		Handling of values below the limit of detection (LOD) of the albumin assay:			Do not set them to missing.  			If numerical values below LOD are available, leave them as they are, but specify the assay LOD in the script parameter file as described in the next section.  			If they are reported as “<LOD” (e.g.: “<3”), drop the “<” operator, leave numerical value of the LOD (e.g.: 3), and specify the assay LOD in the script parameter file.  			Ensure that the variable has only numeric values.
 uric_acid	As measured, possible units: mg/dl or μmol/l (units will be specified in the parameter file)
 
 example R code for export:
 > tmp <- YOUR_DATA
-> colnames(tmp) <- c("iid","age_screa", "male", "black", "screa", "ucrea", "ualb")
+> colnames(tmp) <- c("iid","age_screa", "male", "black", "screa", "ucrea", "ualb", "uric_acid")
 > write.table(file="phenodata.txt",tmp, col.names=TRUE, row.names=FALSE, sep="\t")
 
 4. Run the phenotype generation script, passing the parameters file, e.g.
