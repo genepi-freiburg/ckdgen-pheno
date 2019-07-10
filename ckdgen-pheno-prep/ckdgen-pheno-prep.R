@@ -170,6 +170,7 @@ column_diabetes_crea_serum = Sys.getenv("COLUMN_DIABETES_CREA_SERUM")
 column_diabetes_urine = Sys.getenv("COLUMN_DIABETES_URINE")
 column_gout = Sys.getenv("COLUMN_GOUT")
 column_creatinine_serum_followup = Sys.getenv("COLUMN_CREATININE_SERUM_FOLLOWUP")
+column_cysc_serum = Sys.getenv("COLUMN_CYSC_SERUM")
   
 mandatory_columns = c(
   "column_individual_id",
@@ -187,6 +188,7 @@ optional_columns = c(
   "column_age_blood_followup",
   "column_creatinine_serum",
   "column_uric_acid_serum",
+  "column_cysc_serum",    
   "column_creatinine_urinary",
   "column_albumin_urinary",
   "column_bun_serum",
@@ -298,6 +300,7 @@ check_missing_age = function(name, have_pheno, have_age) {
 have_pheno_urine = length(which(!is.na(data[, column_creatinine_urinary]))) > 0 ||
   length(which(!is.na(data[, column_albumin_urinary]))) > 0
 have_pheno_crea = length(which(!is.na(data[, column_creatinine_serum]))) > 0
+have_pheno_cysc = length(which(!is.na(data[, column_cysc_serum]))) > 0
 have_pheno_bun_urea = length(which(!is.na(data[, column_bun_serum]))) > 0 ||
   length(which(!is.na(data[, column_urea_serum]))) > 0
 have_pheno_uric_acid = length(which(!is.na(data[, column_uric_acid_serum]))) > 0
@@ -624,6 +627,13 @@ output$uacr = output$albumin_urinary_lod / output$creatinine_urinary * 100
 print("Calculating eGFR creat (CKDEpi)")
 output$egfr_ckdepi_creat = CKDEpi.creat(output$creatinine_serum, output$sex_male, 
                                         output$age_crea_serum, output$race_black)
+# calculate eGFR measurements based on cystatin C
+if (have_pheno_cysc) {
+    print("Calculating eGFR cystatin C (CKDEpi)")
+    output$egfr_ckdepi_cys= CKDEpi.cys(output$cysc_serum, output$sex_male, output$age_crea_serum)
+    print("Calculating eGFR cysc+creat (CKDEpi)")
+    output$egfr_ckdepi_creat_cys= CKDEpi.creat.cys(output$creatinine_serum, output$cysc_serum, output$sex_male, output$age_crea_serum, output$race_black)
+}
 
 # calculate pediatric eGFR
 if (pediatric_mode) {
@@ -648,72 +658,99 @@ if (have_followup_data) {
   output$egfr_ckdepi_followup = NA
 }
 
-# windsorize baseline eGFR
+# winsorize baseline eGFR
 egfr_low = length(which(output$egfr_ckdepi_creat < 15))
 egfr_high = length(which(output$egfr_ckdepi_creat > 200))
-print(paste("Windsorize", egfr_low, "eGFR values below 15 ml/min/1.73qm"))
-print(paste("Windsorize", egfr_high, "eGFR values above 200 ml/min/1.73qm"))
+print(paste("Winsorize", egfr_low, "eGFR values below 15 ml/min/1.73qm"))
+print(paste("Winsorize", egfr_high, "eGFR values above 200 ml/min/1.73qm"))
 
 output$egfr_ckdepi_creat = ifelse(output$egfr_ckdepi_creat < 15, 15, output$egfr_ckdepi_creat)
 output$egfr_ckdepi_creat = ifelse(output$egfr_ckdepi_creat > 200, 200, output$egfr_ckdepi_creat)
 
-# windsorize pediatric eGFR
+# for non-log eGFR
+output$egfr_ckdepi = output$egfr_ckdepi_creat
+
+# winsorize cysc based eGFR
+if (have_pheno_cysc) {
+  egfr_low = length(which(output$egfr_ckdepi_cys < 15))
+  egfr_high = length(which(output$egfr_ckdepi_cys > 200))
+  print(paste("Winsorize", egfr_low, "eGFRcys values below 15 ml/min/1.73qm"))
+  print(paste("Winsorize", egfr_high, "eGFRcys values above 200 ml/min/1.73qm"))
+
+  output$egfr_ckdepi_cys = ifelse(output$egfr_ckdepi_cys < 15, 15, output$egfr_ckdepi_cys)
+  output$egfr_ckdepi_cys = ifelse(output$egfr_ckdepi_cys > 200, 200, output$egfr_ckdepi_cys)
+
+  # eGFRcreaCys
+  egfr_low = length(which(output$egfr_ckdepi_creat_cys < 15))
+  egfr_high = length(which(output$egfr_ckdepi_creat_cys > 200))
+  print(paste("Winsorize", egfr_low, "eGFRcreaCys values below 15 ml/min/1.73qm"))
+  print(paste("Winsorize", egfr_high, "eGFRcreaCys values above 200 ml/min/1.73qm"))
+
+  output$egfr_ckdepi_creat_cys = ifelse(output$egfr_ckdepi_creat_cys < 15, 15, output$egfr_ckdepi_creat_cys)
+  output$egfr_ckdepi_creat_cys = ifelse(output$egfr_ckdepi_creat_cys > 200, 200, output$egfr_ckdepi_creat_cys)
+
+}
+
+# winsorize pediatric eGFR
 if (pediatric_mode) {
   egfr_low = length(which(output$egfr_pediatric_creat < 15))
   egfr_high = length(which(output$egfr_pediatric_creat > 200))
-  print(paste("Windsorize", egfr_low, "pediatric eGFR values below 15 ml/min/1.73qm"))
-  print(paste("Windsorize", egfr_high, "pediatric eGFR values above 200 ml/min/1.73qm"))
+  print(paste("Winsorize", egfr_low, "pediatric eGFR values below 15 ml/min/1.73qm"))
+  print(paste("Winsorize", egfr_high, "pediatric eGFR values above 200 ml/min/1.73qm"))
   
   output$egfr_pediatric_creat = ifelse(output$egfr_pediatric_creat < 15, 15, output$egfr_pediatric_creat)
   output$egfr_pediatric_creat = ifelse(output$egfr_pediatric_creat > 200, 200, output$egfr_pediatric_creat)
+
+  # for non-log eGFR
+  output$egfr_pediatric = output$egfr_pediatric_creat
 }
 
-# windsorize follow-up eGFR
+# winsorize follow-up eGFR
 egfr_fu_low = length(which(output$egfr_ckdepi_followup < 15))
 egfr_fu_high = length(which(output$egfr_ckdepi_followup > 200))
-print(paste("Windsorize", egfr_fu_low, "eGFR follow-up values below 15 ml/min/1.73qm"))
-print(paste("Windsorize", egfr_fu_high, "eGFR follow-up values above 200 ml/min/1.73qm"))
+print(paste("Winsorize", egfr_fu_low, "eGFR follow-up values below 15 ml/min/1.73qm"))
+print(paste("Winsorize", egfr_fu_high, "eGFR follow-up values above 200 ml/min/1.73qm"))
 
 output$egfr_ckdepi_followup = ifelse(output$egfr_ckdepi_followup < 15, 15, output$egfr_ckdepi_followup)
 output$egfr_ckdepi_followup = ifelse(output$egfr_ckdepi_followup > 200, 200, output$egfr_ckdepi_followup)
 
-# windsorize pediatric follow-up eGFR
+# winsorize pediatric follow-up eGFR
 if (pediatric_mode && have_followup_data) {
   egfr_fu_low = length(which(output$egfr_pediatric_followup < 15))
   egfr_fu_high = length(which(output$egfr_pediatric_followup > 200))
-  print(paste("Windsorize", egfr_fu_low, "pediatric eGFR follow-up values below 15 ml/min/1.73qm"))
-  print(paste("Windsorize", egfr_fu_high, "pediatric eGFR follow-up values above 200 ml/min/1.73qm"))
+  print(paste("Winsorize", egfr_fu_low, "pediatric eGFR follow-up values below 15 ml/min/1.73qm"))
+  print(paste("Winsorize", egfr_fu_high, "pediatric eGFR follow-up values above 200 ml/min/1.73qm"))
   
   output$egfr_pediatric_followup = ifelse(output$egfr_pediatric_followup < 15, 15, output$egfr_pediatric_followup)
   output$egfr_pediatric_followup = ifelse(output$egfr_pediatric_followup > 200, 200, output$egfr_pediatric_followup)
 }
 
-# windsorize baseline creatinine
+# winsorize baseline creatinine
 crea_nonblack_low = length(which(output$creatinine_serum < 0.03 & output$race_black == 0))
 crea_nonblack_high = length(which(output$creatinine_serum > 5.18 & output$race_black == 0))
 crea_black_low = length(which(output$creatinine_serum < 0.045 & output$race_black == 1))
 crea_black_high = length(which(output$creatinine_serum > 5.85 & output$race_black == 1))
 
-print(paste("Windsorize", crea_nonblack_low, "serum creatinine values (non-black) below 0.03 mg/dl"))
-print(paste("Windsorize", crea_nonblack_high, "serum creatinine values (non-black) above 5.18 mg/dl"))
-print(paste("Windsorize", crea_black_low, "serum creatinine values (black) below 0.045 mg/dl"))
-print(paste("Windsorize", crea_black_high, "serum creatinine values (black) above 5.85 mg/dl"))
+print(paste("Winsorize", crea_nonblack_low, "serum creatinine values (non-black) below 0.03 mg/dl"))
+print(paste("Winsorize", crea_nonblack_high, "serum creatinine values (non-black) above 5.18 mg/dl"))
+print(paste("Winsorize", crea_black_low, "serum creatinine values (black) below 0.045 mg/dl"))
+print(paste("Winsorize", crea_black_high, "serum creatinine values (black) above 5.85 mg/dl"))
 
 output$creatinine_serum = ifelse(output$creatinine_serum < 0.03 & output$race_black == 0, 0.03, output$creatinine_serum)
 output$creatinine_serum = ifelse(output$creatinine_serum > 5.18 & output$race_black == 0, 5.18, output$creatinine_serum)
 output$creatinine_serum = ifelse(output$creatinine_serum < 0.045 & output$race_black == 1, 0.045, output$creatinine_serum)
 output$creatinine_serum = ifelse(output$creatinine_serum > 5.85 & output$race_black == 1, 5.85, output$creatinine_serum)
 
-# windsorize follow-up creatinine
+# winsorize follow-up creatinine
 crea_fu_nonblack_low = length(which(output$creatinine_serum_followup < 0.03 & output$race_black == 0))
 crea_fu_nonblack_high = length(which(output$creatinine_serum_followup > 5.18 & output$race_black == 0))
 crea_fu_black_low = length(which(output$creatinine_serum_followup < 0.045 & output$race_black == 1))
 crea_fu_black_high = length(which(output$creatinine_serum_followup > 5.85 & output$race_black == 1))
 
-print(paste("Windsorize", crea_fu_nonblack_low, "follow-up creatinine values (non-black) below 0.03 mg/dl"))
-print(paste("Windsorize", crea_fu_nonblack_high, "follow-up creatinine values (non-black) above 5.18 mg/dl"))
-print(paste("Windsorize", crea_fu_black_low, "follow-up creatinine values (black) below 0.045 mg/dl"))
-print(paste("Windsorize", crea_fu_black_high, "follow-up creatinine values (black) above 5.85 mg/dl"))
+print(paste("Winsorize", crea_fu_nonblack_low, "follow-up creatinine values (non-black) below 0.03 mg/dl"))
+print(paste("Winsorize", crea_fu_nonblack_high, "follow-up creatinine values (non-black) above 5.18 mg/dl"))
+print(paste("Winsorize", crea_fu_black_low, "follow-up creatinine values (black) below 0.045 mg/dl"))
+print(paste("Winsorize", crea_fu_black_high, "follow-up creatinine values (black) above 5.85 mg/dl"))
 
 output$creatinine_serum_followup = ifelse(output$creatinine_serum_followup < 0.03 & output$race_black == 0, 0.03, output$creatinine_serum_followup)
 output$creatinine_serum_followup = ifelse(output$creatinine_serum_followup > 5.18 & output$race_black == 0, 5.18, output$creatinine_serum_followup)
@@ -881,11 +918,17 @@ add_transform("uacr_dm ~ age_urine + sex_male", "ln", "invnorm")
 add_transform("creatinine_serum ~ age_crea_serum + sex_male", "ln", "none")
 add_transform("bun_serum ~ age_bun_urea + sex_male", "ln", "none")
 
+add_transform("egfr_ckdepi ~ age_crea_serum + sex_male", "none", "none") # no log
 add_transform("egfr_ckdepi_creat ~ age_crea_serum + sex_male", "ln", "none")
 add_transform("egfr_ckdepi_creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
 add_transform("egfr_ckdepi_creat_dm ~ age_crea_serum + sex_male", "ln", "none")
 
+if (have_pheno_cysc) {
+    add_transform("egfr_ckdepi_cys ~ age_crea_serum + sex_male", "none", "none")
+    add_transform("egfr_ckdepi_creat_cys ~ age_crea_serum + sex_male", "none", "none")
+}
 if (pediatric_mode) {
+  add_transform("egfr_pediatric ~ age_crea_serum + sex_male", "none", "none") # no log
   add_transform("egfr_pediatric_creat ~ age_crea_serum + sex_male", "ln", "none")
   add_transform("egfr_pediatric_creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
   add_transform("egfr_pediatric_creat_dm ~ age_crea_serum + sex_male", "ln", "none")
@@ -962,6 +1005,9 @@ phenotype = data.frame(
   eGFR_overall = ifelse(pediatric_mode_vec, 
                         output$ln_egfr_pediatric_creat_residuals, 
                         output$ln_egfr_ckdepi_creat_residuals),
+  eGFRcrea_overall = ifelse(pediatric_mode_vec, 
+                        output$egfr_pediatric_residuals, 
+                        output$egfr_ckdepi_residuals),
   eGFR_DM = ifelse(pediatric_mode_vec, 
                    output$ln_egfr_pediatric_creat_dm_residuals, 
                    output$ln_egfr_ckdepi_creat_dm_residuals),
@@ -984,8 +1030,14 @@ phenotype = data.frame(
   MA_nonDM = output$microalbuminuria_nondm,
   Gout_overall = output$gout,
   Gout_women = output$gout_female,
-  Gout_men = output$gout_male
+  Gout_men = output$gout_male    
 )
+
+phenotype$eGFRcys_overall=output$egfr_ckdepi_cys_residuals
+if (have_pheno_cysc) {
+  phenotype$eGFRcys_overall=output$egfr_ckdepi_cys_residuals
+  phenotype$eGFRcreaCys_overall=output$egfr_ckdepi_creat_cys_residuals
+}
 
 if (have_followup_data) {
   phenotype$ckdi25_overall = output$ckdi25
@@ -1028,6 +1080,10 @@ check_median_by_range("uacr", 0, 200)
 check_median_by_range("bun_serum", 5, 20)
 check_median_by_range("egfr_ckdepi_creat", 0, 200)
 check_median_by_range("creatinine_serum_followup", 0.5, 2.5)
+
+if (have_pheno_cysc) {
+  check_median_by_range("cysc_serum", 0, 10)
+}
 
 if (pediatric_mode) {
   check_median_by_range("egfr_pediatric_creat", 0, 200)
@@ -1113,6 +1169,13 @@ quantitative_variables = c(
   "creatinine_urinary",
   as.character(transformations$variable)
 )
+
+if (have_pheno_cysc) {
+  quantitative_variables = c(
+    quantitative_variables,
+    "cysc_serum"
+  )
+}
 
 if (pediatric_mode) {
   quantitative_variables = c(
