@@ -443,7 +443,7 @@ for (column in unnecessary_columns) {
                      message = "Unnecessary column",
                      param1 = column,
                      param2 = NA)
-  errors = rbind(errors, error)
+ # errors = rbind(errors, error)
 }
 
 
@@ -914,24 +914,25 @@ add_transform("uacr ~ age_urine + sex_male", "ln", "invnorm")
 add_transform("uacr_nondm ~ age_urine + sex_male", "ln", "invnorm")
 add_transform("uacr_dm ~ age_urine + sex_male", "ln", "invnorm")
 
-# log-transform and calculate residuals for: creatinine, BUN, eGFR
-add_transform("creatinine_serum ~ age_crea_serum + sex_male", "ln", "none")
-add_transform("bun_serum ~ age_bun_urea + sex_male", "ln", "none")
+# no transformation and calculate residuals for: creatinine, BUN, eGFR
+add_transform("creatinine_serum ~ age_crea_serum + sex_male", "none", "none")
+add_transform("bun_serum ~ age_bun_urea + sex_male", "none", "none")
 
 add_transform("egfr_ckdepi ~ age_crea_serum + sex_male", "none", "none") # no log
-add_transform("egfr_ckdepi_creat ~ age_crea_serum + sex_male", "ln", "none")
-add_transform("egfr_ckdepi_creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
-add_transform("egfr_ckdepi_creat_dm ~ age_crea_serum + sex_male", "ln", "none")
+add_transform("egfr_ckdepi_creat ~ age_crea_serum + sex_male", "none", "none")
+add_transform("egfr_ckdepi_creat_nondm ~ age_crea_serum + sex_male", "none", "none")
+add_transform("egfr_ckdepi_creat_dm ~ age_crea_serum + sex_male", "none", "none")
 
 if (have_pheno_cysc) {
     add_transform("egfr_ckdepi_cys ~ age_crea_serum + sex_male", "none", "none")
     add_transform("egfr_ckdepi_creat_cys ~ age_crea_serum + sex_male", "none", "none")
 }
+
 if (pediatric_mode) {
   add_transform("egfr_pediatric ~ age_crea_serum + sex_male", "none", "none") # no log
-  add_transform("egfr_pediatric_creat ~ age_crea_serum + sex_male", "ln", "none")
-  add_transform("egfr_pediatric_creat_nondm ~ age_crea_serum + sex_male", "ln", "none")
-  add_transform("egfr_pediatric_creat_dm ~ age_crea_serum + sex_male", "ln", "none")
+  add_transform("egfr_pediatric_creat ~ age_crea_serum + sex_male", "none", "none")
+  add_transform("egfr_pediatric_creat_nondm ~ age_crea_serum + sex_male", "none", "none")
+  add_transform("egfr_pediatric_creat_dm ~ age_crea_serum + sex_male", "none", "none")
 }
 
 if (have_followup_data) {
@@ -996,29 +997,30 @@ for (i in 1:nrow(transformations)) {
 }
 
 # make GWAS phenotype output file with less columns
+
+summary(output)
+
 print("Writing output")
 
 pediatric_mode_vec = rep(pediatric_mode,nrow(output))
+# TODO may need to adjust this
 phenotype = data.frame(
   index = output$index,
   individual_id = output$individual_id,
-  eGFR_overall = ifelse(pediatric_mode_vec, 
-                        output$ln_egfr_pediatric_creat_residuals, 
-                        output$ln_egfr_ckdepi_creat_residuals),
   eGFRcrea_overall = ifelse(pediatric_mode_vec, 
                         output$egfr_pediatric_residuals, 
                         output$egfr_ckdepi_residuals),
   eGFR_DM = ifelse(pediatric_mode_vec, 
-                   output$ln_egfr_pediatric_creat_dm_residuals, 
-                   output$ln_egfr_ckdepi_creat_dm_residuals),
+                   output$egfr_pediatric_creat_dm_residuals, 
+                   output$egfr_ckdepi_creat_dm_residuals),
   eGFR_nonDM = ifelse(pediatric_mode_vec, 
-                      output$ln_egfr_pediatric_creat_nondm_residuals, 
-                      output$ln_egfr_ckdepi_creat_nondm_residuals),
-  creatinine_overall = output$ln_creatinine_serum_residuals,
+                      output$egfr_pediatric_creat_nondm_residuals, 
+                      output$egfr_ckdepi_creat_nondm_residuals),
+  creatinine_overall = output$creatinine_serum_residuals,
   UACR_overall = output$ln_uacr_residuals_invnorm,
   UACR_DM = output$ln_uacr_dm_residuals_invnorm,
   UACR_nondm = output$ln_uacr_nondm_residuals_invnorm,
-  bun_overall = output$ln_bun_serum_residuals,
+  bun_overall = output$bun_serum_residuals,
   uric_acid_overall = output$uric_acid_serum_residuals,
   uric_acid_women = output$uric_acid_serum_female_residuals,
   uric_acid_men = output$uric_acid_serum_male_residuals,
